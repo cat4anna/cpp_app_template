@@ -2,10 +2,9 @@
 
 set -e
 
-# docker build -t tpl:latest -f .\ci\dockerfile.test .
-
-BUILD_DEBUG="build/debug"
-BUILD_RELEASE="build/release"
+SRC_DIR="$(pwd)"
+BUILD_DEBUG="$(pwd)/build/debug"
+BUILD_RELEASE="$(pwd)/build/release"
 
 get_path() {
     case $1 in
@@ -19,29 +18,30 @@ get_path() {
 }
 
 cmake_configure() {
-    mkdir -p "$(get_path $1)"
-    pushd "$(get_path $1)"
-    cmake --toolchain "${CMAKE_TOOLCHAIN_FILE}" -S "${SOURCE_DIR}" -B "$(get_path $1)"
-    popd
+    BIN_PATH="$(get_path $1)"
+    mkdir -p "${BIN_PATH}"
+    pushd "${BIN_PATH}" >/dev/null
+    cmake --toolchain "${CMAKE_TOOLCHAIN_FILE}" -S "${SRC_DIR}" -B "${BIN_PATH}"
+    popd >/dev/null
     #  -D CMAKE_BUILD_TYPE=$1
 }
 
 cmake_build() {
-    pushd "$(get_path $1)"
+    pushd "$(get_path $1)" >/dev/null
     cmake --build . --config $1
-    popd
+    popd >/dev/null
 }
 
 cmake_test() {
-    pushd "$(get_path $1)"
+    pushd "$(get_path $1)" >/dev/null
     ctest --build-config $1 .
-    popd
+    popd >/dev/null
 }
 
 cmake_pack() {
-    pushd "$(get_path $1)"
+    pushd "$(get_path $1)" >/dev/null
     cpack -G ZIP -C $1
-    popd
+    popd >/dev/null
 }
 
 for action in "$@"; do
@@ -75,14 +75,17 @@ for action in "$@"; do
     "pack-debug")
         cmake_pack "debug"
         ;;
-    "pack-release")
+    "pack-rel")
         cmake_pack "rel"
+        ;;
+    *)
+        echo "Unknown command $action"
+        exit 1
         ;;
     esac
 done
 
-
-    #  --target ALL_BUILD
+#  --target ALL_BUILD
 
 # "CMAKE_TOOLCHAIN_FILE": "D:/Programowanie/external/vcpkg/scripts/buildsystems/vcpkg.cmake",
 # "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"

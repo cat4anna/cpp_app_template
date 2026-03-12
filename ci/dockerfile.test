@@ -19,4 +19,6 @@ RUN \
     cat "${WORKSPACE_DIR}/vcpkg_packages.txt" | xargs -t ./vcpkg install --clean-after-build && \
     true
 
+ENV BUILD_DIR="${WORKSPACE_DIR}/build"
+RUN mkdir -p "${BUILD_DIR}" && chmod +rwx "${BUILD_DIR}"
 WORKDIR "${WORKSPACE_DIR}"
