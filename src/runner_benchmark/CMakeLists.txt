@@ -1,0 +1,1 @@
+# define_static_lib(runner_benchmark)

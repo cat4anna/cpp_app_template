@@ -1,0 +1,22 @@
+FROM alpine:latest
+
+RUN \
+    apk update && \
+    apk add bash binutils build-base pkgconf zip unzip curl git cmake ninja make clang && \
+    true
+
+ENV VCPKG_DISABLE_METRICS=1
+ENV VCPKG_FORCE_SYSTEM_BINARIES=1
+ENV CMAKE_TOOLCHAIN_FILE=/workspace/vcpkg/scripts/buildsystems/vcpkg.cmake
+ENV WORKSPACE_DIR=/workspace
+ENV VCPKG_DIR="${WORKSPACE_DIR}/vcpkg"
+
+ADD ci/vcpkg_packages.txt "${WORKSPACE_DIR}/vcpkg_packages.txt"
+RUN git clone --depth=1 https://github.com/microsoft/vcpkg.git "${VCPKG_DIR}"
+WORKDIR "${VCPKG_DIR}"
+RUN \
+    /bin/sh bootstrap-vcpkg.sh && \
+    cat "${WORKSPACE_DIR}/vcpkg_packages.txt" | xargs -t ./vcpkg install --clean-after-build && \
+    true
+
+WORKDIR "${WORKSPACE_DIR}"

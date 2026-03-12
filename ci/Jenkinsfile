@@ -1,0 +1,59 @@
+pipeline {
+    agent any
+    environment {
+        APP_NAME = 'cpp_app_template'
+        // TEST_DOCKER_TAG_CURRENT = "cpp_app_template:test-${BUILD_NUMBER}"
+        TEST_DOCKER_TAG_LATEST = 'cpp_app_template:test-latest'
+    }
+    stages {
+        stage('Build test docker') {
+            steps {
+                // sh 'docker rmi ${TEST_DOCKER_TAG_CURRENT}'
+                sh 'docker build -t ${TEST_DOCKER_TAG_LATEST} -f ci/dockerfile.test .'
+            }
+        }
+        stage('Test') {
+            parallel {
+                stage('Debug') {
+                    agent {
+                        docker {
+                            image "${TEST_DOCKER_TAG_LATEST}"
+                            reuseNode false
+                        }
+                    }
+                    steps {
+                        // cmakeBuild buildDir: 'build-debug', buildType: 'Debug',
+                        //     cleanBuild: true, generator: 'Ninja',
+                        //     installation: 'InSearchPath', steps: [[args: 'all'], [args: 'install']]
+                        // // archiveArtifacts artifacts: 'build-debug/install/**', followSymlinks: false
+                        // ctest installation: 'InSearchPath', workingDir: 'build-debug'
+                        // xunit([GoogleTest(excludesPattern: '', pattern: 'build-debug/test_result/*.xml', stopProcessingIfError: true)])
+                        // archiveArtifacts artifacts: 'build-debug/test_result/**', followSymlinks: false
+                        sh '/bin/bash ci/ci_run.sh configure-debug'
+                        sh '/bin/bash ci/ci_run.sh build-debug'
+                        sh '/bin/bash ci/ci_run.sh test-debug'
+                    }
+                }
+                stage('Release') {
+                    agent {
+                        docker {
+                            image "${TEST_DOCKER_TAG_LATEST}"
+                            reuseNode false
+                        }
+                    }
+                    steps {
+                        // cmakeBuild buildDir: 'build-release', buildType: 'Release', cleanBuild: true, generator: 'Ninja', installation: 'InSearchPath', steps: [[args: 'all'], [args: 'install']]
+                        // // archiveArtifacts artifacts: 'build-release/install/**', followSymlinks: false
+                        // ctest installation: 'InSearchPath', workingDir: 'build-release'
+                        // // xunit([GoogleTest(excludesPattern: '', pattern: 'build-release/test_result/*.xml', stopProcessingIfError: true)])
+                        // // archiveArtifacts artifacts: 'build-release/test_result/**', followSymlinks: false
+
+                        sh '/bin/bash ci/ci_run.sh configure-release'
+                        sh '/bin/bash ci/ci_run.sh build-release'
+                        sh '/bin/bash ci/ci_run.sh test-release'
+                    }
+                }
+            }
+        }
+    }
+}

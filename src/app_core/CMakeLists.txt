@@ -1,0 +1,2 @@
+define_static_lib_with_ut(app_core)
+# define_static_lib_with_ut_and_benchmark(app_core)
