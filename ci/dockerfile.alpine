@@ -2,7 +2,8 @@ FROM alpine:latest
 
 RUN \
     apk update && \
-    apk add bash binutils build-base pkgconf zip unzip curl git cmake ninja make clang && \
+    apk add bash binutils build-base pkgconf zip unzip curl git cmake ninja make clang musl-utils && \
+    apk add lua5.4 lua5.4-filesystem lua5.4-pty && \
     true
 
 ENV VCPKG_DISABLE_METRICS=1

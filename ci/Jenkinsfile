@@ -27,9 +27,7 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '/bin/bash ci/ci_run.sh configure-debug'
-                        sh '/bin/bash ci/ci_run.sh build-debug'
-                        sh '/bin/bash ci/ci_run.sh test-debug'
+                        sh '/usr/bin/lua5.4 ci/ci_run.lua all-debug'
                     }
                 }
                 stage('Release') {
@@ -40,9 +38,7 @@ pipeline {
                         }
                     }
                     steps {
-                        sh '/bin/bash ci/ci_run.sh configure-rel'
-                        sh '/bin/bash ci/ci_run.sh build-rel'
-                        sh '/bin/bash ci/ci_run.sh test-rel'
+                        sh '/usr/bin/lua5.4 ci/ci_run.lua all-release'
                     }
                 }
             }
