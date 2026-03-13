@@ -12,22 +12,37 @@ fi
 
 get_path() {
     case "${1}" in
-    "rel" | "release")
+    "rel" | "release" | "RelWithDebInfo")
         echo "${BUILD_RELEASE}"
         ;;
-    "debug")
+    "debug" | "Debug")
         echo "${BUILD_DEBUG}"
         ;;
     esac
 }
 
+get_config() {
+    case "${1}" in
+    *-rel | *-release)
+        echo "RelWithDebInfo"
+        ;;
+    *-debug)
+        echo "debug"
+        ;;
+    esac
+}
+
 clean_ws() {
-    rm -rf "$(get_path "${1}")/*"
+    popd >/dev/null
+    BIN_PATH="$(get_path ${config})"
+    rm -rf "${BIN_PATH}"
+    mkdir -p "${BIN_PATH}"
+    pushd "${BIN_PATH}" >/dev/null
 }
 
 cmake_configure() {
     case "${1}" in
-    "rel" | "release")
+    "rel" | "release" |  "RelWithDebInfo")
         TRIPLET_SUFFIX="-release"
         PACKAGE_NAME_SUFFIX="release"
         ;;
@@ -40,7 +55,7 @@ cmake_configure() {
     cmake \
         -G Ninja \
         -D "JENKINS_BUILD_NUMBER=${BUILD_NUMBER}" \
-        -D "PACKAGE_BUILD_TYPE=${PACKAGE_NAME_SUFFIX}" \
+        -D "CMAKE_BUILD_TYPE=${1}" \
         -D "VCPKG_TARGET_TRIPLET=${VCPKG_TARGET_TRIPLET}${TRIPLET_SUFFIX}" \
         --toolchain "${CMAKE_TOOLCHAIN_FILE}" \
         -S "${SRC_DIR}" \
@@ -61,31 +76,32 @@ cmake_test() {
 
 cmake_pack() {
     cpack -G ZIP -C "${1}"
+
 }
 
 for action in "$@"; do
-    type=$(echo $action | cut -d'-' -f 2 )
+    config=$(get_config $action)
 
-    BIN_PATH="$(get_path ${type})"
+    BIN_PATH="$(get_path ${config})"
     mkdir -p "${BIN_PATH}"
     pushd "${BIN_PATH}" >/dev/null
 
     case $action in
     all-*)
-        clean_ws "${type}"
-        cmake_configure "${type}"
-        cmake_build "${type}"
-        cmake_install "${type}"
-        cmake_test "${type}"
-        cmake_pack "${type}"
+        clean_ws "${config}"
+        cmake_configure "${config}"
+        cmake_build "${config}"
+        cmake_test "${config}"
+        cmake_install "${config}"
+        cmake_pack "${config}"
         ;;
 
-    clean-*)        clean_ws        "${type}" ;;
-    configure-*)    cmake_configure "${type}" ;;
-    build-*)        cmake_build     "${type}" ;;
-    install-*)      cmake_install   "${type}" ;;
-    test-*)         cmake_test      "${type}" ;;
-    pack-*)         cmake_pack      "${type}" ;;
+    clean-*)        clean_ws        "${config}" ;;
+    configure-*)    cmake_configure "${config}" ;;
+    build-*)        cmake_build     "${config}" ;;
+    install-*)      cmake_install   "${config}" ;;
+    test-*)         cmake_test      "${config}" ;;
+    pack-*)         cmake_pack      "${config}" ;;
 
     *)
         echo "Unknown command $action"

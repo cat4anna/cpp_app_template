@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 
 project(
     cpp_app_template
@@ -6,7 +6,7 @@ project(
     )
 
 if (NOT DEFINED JENKINS_BUILD_NUMBER)
-    set(JENKINS_BUILD_NUMBER 0 FORCE)
+    set(JENKINS_BUILD_NUMBER 0)
 endif()
 
 set(CMAKE_PROJECT_VERSION 0.0.1.${JENKINS_BUILD_NUMBER})

@@ -41,7 +41,9 @@ function(define_executable target_name )
   install(
     TARGETS ${target_name}
     COMPONENT executables
-    DESTINATION bin)
+    DESTINATION bin
+    ${APP_INSTALL_CONFIG}
+    )
 
   set(TARGET
       ${target_name}
@@ -60,7 +62,6 @@ function(define_ut_target target_name ut_name)
   add_executable(${target_ut_name} ${src_ut})
   target_include_directories(${target_ut_name} PRIVATE src test)
   target_link_libraries(${target_ut_name} PUBLIC ${target_name} GTest::gmock GTest::gtest ${runner_ut})
-  target_compile_definitions(${target_ut_name} PRIVATE -DWANTS_GTEST_MOCKS)
 
   add_custom_target(
     run_${target_ut_name}
@@ -81,8 +82,11 @@ function(define_ut_target target_name ut_name)
 
   install(
     TARGETS ${target_ut_name}
+    EXCLUDE_FROM_ALL
     COMPONENT test
-    DESTINATION test)
+    DESTINATION test
+    ${APP_INSTALL_CONFIG}
+    )
 
   add_dependencies(execute_all_test run_${target_ut_name})
   add_dependencies(build_all_test ${target_ut_name})

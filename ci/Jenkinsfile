@@ -13,10 +13,11 @@ pipeline {
         }
         stage('Build test docker') {
             steps {
+                // --no-cache
                 sh 'docker build -t ${TEST_DOCKER_TAG_LATEST} -f ci/dockerfile.alpine .'
             }
         }
-        stage('Test') {
+        stage('Build and Test') {
             parallel {
                 stage('Debug') {
                     agent {

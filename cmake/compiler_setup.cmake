@@ -1,15 +1,11 @@
-# if(NOT DEFINED CMAKE_BUILD_TYPE)
-#   set(CMAKE_BUILD_TYPE Debug)
-# endif()
 
 set(TARGET_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/output/${CMAKE_BUILD_TYPE}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TARGET_DESTINATION})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TARGET_DESTINATION})
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install")
+message(STATUS "Target destination: " ${TARGET_DESTINATION})
 
-message("* Target destination: " ${TARGET_DESTINATION})
-
-set(TEST_RESULT_DIR ${CMAKE_CURRENT_BINARY_DIR}/test_result)
+set(TEST_RESULT_DIR ${CMAKE_CURRENT_BINARY_DIR}/Testing)
 file(MAKE_DIRECTORY ${TEST_RESULT_DIR})
 
 enable_testing()
@@ -32,16 +28,16 @@ elseif(LINUX)
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  message("* Enabling debug features")
+  message(STATUS "Enabling debug features")
   add_definitions(-DDEBUG)
 endif()
 
 find_program(clang_tidy_executable NAMES clang-tidy)
 if(MSVC OR NOT clang_tidy_executable)
-  message("* Disabling clang-tidy")
+  message(STATUS "Disabling clang-tidy")
   set(CLANG_TIDY_COMMAND "")
 else()
-  message("* Using clang-tidy ${clang_tidy_executable}")
+  message(STATUS "Using clang-tidy ${clang_tidy_executable}")
   set(CLANG_TIDY_COMMAND
       ${clang_tidy_executable} -header-filter=${CMAKE_CURRENT_SOURCE_DIR}/.*
       --warnings-as-errors=*

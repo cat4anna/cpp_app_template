@@ -1,7 +1,16 @@
 
 set(CMAKE_CXX_STANDARD 23)
-
 set(CMAKE_EXPORT_COMPILE_COMMAND ON)
+
+if(WIN32)
+    set(APP_INSTALL_CONFIG
+        RUNTIME_DEPENDENCIES
+        PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
+        POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
+    )
+else()
+    # set(APP_INSTALL_CONFIG)
+endif()
 
 # TODO
 # set(APP_UNIT_TEST ON)
