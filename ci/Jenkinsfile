@@ -46,6 +46,7 @@ pipeline {
         stage('Archive artifacts') {
             steps {
                 archiveArtifacts artifacts: '**/Artifacts/*', followSymlinks: false
+                xunit checksName: '', thresholds: [failed(unstableThreshold: '0')], tools: [GoogleTest(excludesPattern: '', pattern: 'build/**/Testing/**.xml', stopProcessingIfError: true)]
             }
         }
     }
