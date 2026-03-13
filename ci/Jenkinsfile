@@ -2,20 +2,18 @@ pipeline {
     agent any
     environment {
         APP_NAME = 'cpp_app_template'
-        // TEST_DOCKER_TAG_CURRENT = "cpp_app_template:test-${BUILD_NUMBER}"
-        TEST_DOCKER_TAG_LATEST = 'cpp_app_template:test-latest'
+        TEST_DOCKER_TAG_LATEST = "${APP_NAME}:test-latest"
     }
     stages {
         stage('Checkout') {
             steps {
-                // sh 'docker rmi ${TEST_DOCKER_TAG_CURRENT}'
                 cleanWs()
                 checkout scm
             }
         }
         stage('Build test docker') {
             steps {
-                sh 'docker build -t ${TEST_DOCKER_TAG_LATEST} -f ci/dockerfile.test .'
+                sh 'docker build -t ${TEST_DOCKER_TAG_LATEST} -f ci/dockerfile.alpine .'
             }
         }
         stage('Test') {
@@ -31,9 +29,6 @@ pipeline {
                         sh '/bin/bash ci/ci_run.sh configure-debug'
                         sh '/bin/bash ci/ci_run.sh build-debug'
                         sh '/bin/bash ci/ci_run.sh test-debug'
-                        // // archiveArtifacts artifacts: 'build-debug/install/**', followSymlinks: false
-                        // archiveArtifacts artifacts: 'build-debug/test_result/**', followSymlinks: false
-                        // xunit([GoogleTest(excludesPattern: '', pattern: 'build-debug/test_result/*.xml', stopProcessingIfError: true)])
                     }
                 }
                 stage('Release') {
@@ -47,8 +42,6 @@ pipeline {
                         sh '/bin/bash ci/ci_run.sh configure-rel'
                         sh '/bin/bash ci/ci_run.sh build-rel'
                         sh '/bin/bash ci/ci_run.sh test-rel'
-                        // // archiveArtifacts artifacts: 'build-release/test_result/**', followSymlinks: false
-                        // // xunit([GoogleTest(excludesPattern: '', pattern: 'build-release/test_result/*.xml', stopProcessingIfError: true)])
                     }
                 }
             }

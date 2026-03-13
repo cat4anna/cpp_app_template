@@ -1,6 +1,6 @@
-if(NOT DEFINED CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
-endif()
+# if(NOT DEFINED CMAKE_BUILD_TYPE)
+#   set(CMAKE_BUILD_TYPE Debug)
+# endif()
 
 set(TARGET_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/output/${CMAKE_BUILD_TYPE}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TARGET_DESTINATION})
@@ -14,7 +14,6 @@ file(MAKE_DIRECTORY ${TEST_RESULT_DIR})
 
 enable_testing()
 
-
 if(MSVC)
   add_compile_options(/external:anglebrackets /external:W0 /W4 /diagnostics:caret) # /WX
   add_compile_options(/wd4100) # unreferenced formal parameter
@@ -24,8 +23,6 @@ else()
   add_compile_options(-Wno-unused-parameter)
   add_compile_options(-Wno-missing-field-initializers)
   add_compile_options(-Wno-gnu-zero-variadic-macro-arguments)
-  add_compile_options(-fpic)
-  link_libraries(dl)
 endif()
 
 if(WIN32)

@@ -9,6 +9,8 @@ ENV VCPKG_DISABLE_METRICS=1
 ENV VCPKG_FORCE_SYSTEM_BINARIES=1
 ENV CMAKE_TOOLCHAIN_FILE=/workspace/vcpkg/scripts/buildsystems/vcpkg.cmake
 ENV WORKSPACE_DIR=/workspace
+# ENV VCPKG_TARGET_TRIPLET=x64-linux-dynamic
+ENV VCPKG_TARGET_TRIPLET=x64-linux
 ENV VCPKG_DIR="${WORKSPACE_DIR}/vcpkg"
 
 ADD ci/vcpkg_packages.txt "${WORKSPACE_DIR}/vcpkg_packages.txt"
@@ -16,9 +18,8 @@ RUN git clone --depth=1 https://github.com/microsoft/vcpkg.git "${VCPKG_DIR}"
 WORKDIR "${VCPKG_DIR}"
 RUN \
     /bin/sh bootstrap-vcpkg.sh && \
-    cat "${WORKSPACE_DIR}/vcpkg_packages.txt" | xargs -t ./vcpkg install --clean-after-build && \
+    cat "${WORKSPACE_DIR}/vcpkg_packages.txt" | xargs -t ./vcpkg install --triplet=${VCPKG_TARGET_TRIPLET} --clean-after-build && \
+    cat "${WORKSPACE_DIR}/vcpkg_packages.txt" | xargs -t ./vcpkg install --triplet=${VCPKG_TARGET_TRIPLET}-release --clean-after-build && \
     true
 
-ENV BUILD_DIR="${WORKSPACE_DIR}/build"
-RUN mkdir -p "${BUILD_DIR}" && chmod +rwx "${BUILD_DIR}"
 WORKDIR "${WORKSPACE_DIR}"

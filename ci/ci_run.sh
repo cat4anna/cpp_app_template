@@ -3,12 +3,16 @@
 set -e
 
 SRC_DIR="$(pwd)"
-BUILD_DEBUG="$(pwd)/build/debug"
-BUILD_RELEASE="$(pwd)/build/release"
+BUILD_DEBUG="$(pwd)/build/${VCPKG_TARGET_TRIPLET}-debug"
+BUILD_RELEASE="$(pwd)/build/${VCPKG_TARGET_TRIPLET}-release"
+
+if [[ ! -v BUILD_NUMBER ]]; then
+    export BUILD_NUMBER=0
+fi
 
 get_path() {
-    case $1 in
-    "rel")
+    case "${1}" in
+    "rel" | "release")
         echo "${BUILD_RELEASE}"
         ;;
     "debug")
@@ -17,77 +21,77 @@ get_path() {
     esac
 }
 
+clean_ws() {
+    rm -rf "$(get_path "${1}")/*"
+}
+
 cmake_configure() {
-    BIN_PATH="$(get_path $1)"
-    mkdir -p "${BIN_PATH}"
-    pushd "${BIN_PATH}" >/dev/null
-    cmake --toolchain "${CMAKE_TOOLCHAIN_FILE}" -S "${SRC_DIR}" -B "${BIN_PATH}"
-    popd >/dev/null
-    #  -D CMAKE_BUILD_TYPE=$1
+    case "${1}" in
+    "rel" | "release")
+        TRIPLET_SUFFIX="-release"
+        PACKAGE_NAME_SUFFIX="release"
+        ;;
+    "dbg" | "debug")
+        TRIPLET_SUFFIX=""
+        PACKAGE_NAME_SUFFIX="debug"
+        ;;
+    esac
+
+    cmake \
+        -G Ninja \
+        -D "JENKINS_BUILD_NUMBER=${BUILD_NUMBER}" \
+        -D "PACKAGE_BUILD_TYPE=${PACKAGE_NAME_SUFFIX}" \
+        -D "VCPKG_TARGET_TRIPLET=${VCPKG_TARGET_TRIPLET}${TRIPLET_SUFFIX}" \
+        --toolchain "${CMAKE_TOOLCHAIN_FILE}" \
+        -S "${SRC_DIR}" \
+        -B "$(get_path "${1}")"
 }
 
 cmake_build() {
-    pushd "$(get_path $1)" >/dev/null
-    cmake --build . --config $1
-    popd >/dev/null
+    cmake --build . --config "${1}"
+}
+
+cmake_install() {
+    cmake --build . --target install --config "${1}"
 }
 
 cmake_test() {
-    pushd "$(get_path $1)" >/dev/null
-    ctest --build-config $1 .
-    popd >/dev/null
+    ctest --build-config "${1}" .
 }
 
 cmake_pack() {
-    pushd "$(get_path $1)" >/dev/null
-    cpack -G ZIP -C $1
-    popd >/dev/null
+    cpack -G ZIP -C "${1}"
 }
 
 for action in "$@"; do
+    type=$(echo $action | cut -d'-' -f 2 )
+
+    BIN_PATH="$(get_path ${type})"
+    mkdir -p "${BIN_PATH}"
+    pushd "${BIN_PATH}" >/dev/null
+
     case $action in
-    "clean-debug")
-        rm -rf "${BUILD_DEBUG}/*"
-        ;;
-    "clean-rel")
-        rm -rf "${BUILD_RELEASE}/*"
-        ;;
-    "configure-debug")
-        cmake_configure "debug"
-        ;;
-    "configure-rel")
-        cmake_configure "rel"
-        ;;
-    "build-debug")
-        cmake_build "debug"
-        ;;
-    "build-rel")
-        cmake_build "rel"
+    all-*)
+        clean_ws "${type}"
+        cmake_configure "${type}"
+        cmake_build "${type}"
+        cmake_install "${type}"
+        cmake_test "${type}"
+        cmake_pack "${type}"
         ;;
 
-    "test-debug")
-        cmake_test "debug"
-        ;;
-    "test-rel")
-        cmake_test "rel"
-        ;;
+    clean-*)        clean_ws        "${type}" ;;
+    configure-*)    cmake_configure "${type}" ;;
+    build-*)        cmake_build     "${type}" ;;
+    install-*)      cmake_install   "${type}" ;;
+    test-*)         cmake_test      "${type}" ;;
+    pack-*)         cmake_pack      "${type}" ;;
 
-    "pack-debug")
-        cmake_pack "debug"
-        ;;
-    "pack-rel")
-        cmake_pack "rel"
-        ;;
     *)
         echo "Unknown command $action"
         exit 1
         ;;
     esac
+
+    popd >/dev/null
 done
-
-#  --target ALL_BUILD
-
-# "CMAKE_TOOLCHAIN_FILE": "D:/Programowanie/external/vcpkg/scripts/buildsystems/vcpkg.cmake",
-# "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-
-#  h:/Projects/cpp_app_template/build -j 24 --
