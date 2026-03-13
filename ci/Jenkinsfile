@@ -43,5 +43,10 @@ pipeline {
                 }
             }
         }
+        stage('Archive artifacts') {
+            steps {
+                archiveArtifacts artifacts: '**/Artifacts/*', followSymlinks: false
+            }
+        }
     }
 }
