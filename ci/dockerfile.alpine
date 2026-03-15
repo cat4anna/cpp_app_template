@@ -15,13 +15,13 @@ ENV WORKSPACE_DIR=/workspace
 ENV VCPKG_TARGET_TRIPLET=x64-linux
 ENV VCPKG_DIR="${WORKSPACE_DIR}/vcpkg"
 
-ADD ci/vcpkg_packages.txt "${WORKSPACE_DIR}/vcpkg_packages.txt"
+ADD ci/vcpkg_commands.txt "${WORKSPACE_DIR}/vcpkg_commands.txt"
 RUN git clone --depth=1 https://github.com/microsoft/vcpkg.git "${VCPKG_DIR}"
 WORKDIR "${VCPKG_DIR}"
 RUN \
     /bin/sh bootstrap-vcpkg.sh && \
-    cat "${WORKSPACE_DIR}/vcpkg_packages.txt" | xargs -t ./vcpkg install --triplet=${VCPKG_TARGET_TRIPLET} --clean-after-build && \
-    cat "${WORKSPACE_DIR}/vcpkg_packages.txt" | xargs -t ./vcpkg install --triplet=${VCPKG_TARGET_TRIPLET}-release --clean-after-build && \
+    ./vcpkg install --triplet=${VCPKG_TARGET_TRIPLET} --clean-after-build "@${WORKSPACE_DIR}/vcpkg_commands.txt" && \
+    ./vcpkg install --triplet=${VCPKG_TARGET_TRIPLET}-release --clean-after-build "@${WORKSPACE_DIR}/vcpkg_commands.txt" && \
     true
 
 WORKDIR "${WORKSPACE_DIR}"

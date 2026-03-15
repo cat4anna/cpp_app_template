@@ -1,8 +1,9 @@
 pipeline {
     agent any
     environment {
-        APP_NAME = 'cpp_app_template'
-        TEST_DOCKER_TAG_LATEST = "${APP_NAME}:test-latest"
+        APP_NAME = "cpp_app_template"
+        DOCKER_TAG = "${APP_NAME}:alpine"
+        DOCKER_REUSE_DAYS=30
     }
     stages {
         stage('Checkout') {
@@ -13,8 +14,7 @@ pipeline {
         }
         stage('Build test docker') {
             steps {
-                // --no-cache
-                sh 'docker build -t ${TEST_DOCKER_TAG_LATEST} -f ci/dockerfile.alpine .'
+                sh "/bin/bash ci/docker_build.sh ${DOCKER_TAG} dockerfile.alpine"
             }
         }
         stage('Build and Test') {
@@ -22,19 +22,18 @@ pipeline {
                 stage('Debug') {
                     agent {
                         docker {
-                            image "${TEST_DOCKER_TAG_LATEST}"
+                            image "${DOCKER_TAG}"
                             reuseNode true
                         }
                     }
                     steps {
                         sh '/usr/bin/lua5.4 ci/ci_run.lua all-debug'
-                        xunit checksName: '', thresholds: [failed(unstableThreshold: '0')], tools: [GoogleTest(excludesPattern: '', pattern: 'build/*/Testing/*.xml', stopProcessingIfError: true)]
                     }
                 }
                 stage('Release') {
                     agent {
                         docker {
-                            image "${TEST_DOCKER_TAG_LATEST}"
+                            image "${DOCKER_TAG}"
                             reuseNode true
                         }
                     }
@@ -48,6 +47,8 @@ pipeline {
             steps {
                 archiveArtifacts artifacts: '**/Artifacts/*', followSymlinks: false
                 scanForIssues sourceCodeRetention: 'LAST_BUILD', tool: clang()
+                xunit checksName: '', thresholds: [failed(unstableThreshold: '0')], tools: [
+                    GoogleTest(excludesPattern: 'build/*release/Testing/*.xml', pattern: 'build/*/Testing/*.xml', stopProcessingIfError: true)]
             }
         }
     }
