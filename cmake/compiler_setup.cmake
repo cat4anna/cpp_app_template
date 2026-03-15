@@ -10,6 +10,16 @@ file(MAKE_DIRECTORY ${TEST_RESULT_DIR})
 
 enable_testing()
 
+if(WIN32)
+    set(APP_INSTALL_CONFIG
+        RUNTIME_DEPENDENCIES
+        PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
+        POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
+    )
+else()
+    # set(APP_INSTALL_CONFIG)
+endif()
+
 if(MSVC)
   add_compile_options(/external:anglebrackets /external:W0 /W4 /diagnostics:caret) # /WX
   add_compile_options(/wd4100) # unreferenced formal parameter

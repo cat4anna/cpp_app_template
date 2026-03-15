@@ -37,9 +37,14 @@ end
 
 local function cmakeInstall(config)
     local cmakeCommandArgs = {
-        "cmake", "--build", ".", "--target", "install", "--config", config.name
+        "cmake", "--install", ".", "--config", config.name
     }
     execute(cmakeCommandArgs)
+    -- local cmakeCommandArgs = {
+    --     "cmake", "--install", ".", "--component", "test", "--config", config.name
+    -- }
+    -- execute(cmakeCommandArgs)
+
 end
 
 local function cmakeTest(config)
@@ -51,7 +56,10 @@ end
 
 local function cmakePack(config)
     local cmakeCommandArgs = {
-        "cpack", "-G", "ZIP", "-C", config.name
+        "cpack",
+        "-G", "ZIP",
+        "-C", config.name,
+        -- "-D", [[CPACK_COMPONENTS_ALL="test"]],
     }
     execute(cmakeCommandArgs)
 end
@@ -86,7 +94,7 @@ local function processAction(handler, config)
     end
 end
 
-local function remapConfig(configName)
+local function getConfig(configName)
     local srcDir = lfs.currentdir()
     local map = {
         debug = {
@@ -110,8 +118,8 @@ end
 
 local function main(argTable)
     for _, action in ipairs(argTable) do
-        local command, config = action:match("(%w+)-?(%w+)")
-        config = remapConfig(config)
+        local command, configName = action:match("(%w+)-?(%w+)")
+        local config = getConfig(configName)
         processAction(Commands[command], config)
     end
 end

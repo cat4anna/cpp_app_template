@@ -40,8 +40,8 @@ function(define_executable target_name )
 
   install(
     TARGETS ${target_name}
-    COMPONENT executables
-    DESTINATION bin
+    COMPONENT main
+    DESTINATION "."
     ${APP_INSTALL_CONFIG}
     )
 
@@ -82,7 +82,7 @@ function(define_ut_target target_name ut_name)
 
   install(
     TARGETS ${target_ut_name}
-    EXCLUDE_FROM_ALL
+    # EXCLUDE_FROM_ALL
     COMPONENT test
     DESTINATION test
     ${APP_INSTALL_CONFIG}
