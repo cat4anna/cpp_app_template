@@ -33,26 +33,27 @@ end
 
 local function cmakeBuild(config)
     local cmakeCommandArgs = {
-        "cmake", "--build", ".", "--config", config.name
+        "cmake",
+        "--build", ".",
+        "--config", config.name,
     }
     execute(cmakeCommandArgs)
 end
 
 local function cmakeInstall(config)
     local cmakeCommandArgs = {
-        "cmake", "--install", ".", "--config", config.name
+        "cmake",
+        "--install", ".",
+        "--config", config.name,
     }
     execute(cmakeCommandArgs)
-    -- local cmakeCommandArgs = {
-    --     "cmake", "--install", ".", "--component", "test", "--config", config.name
-    -- }
-    -- execute(cmakeCommandArgs)
-
 end
 
 local function cmakeTest(config)
     local cmakeCommandArgs = {
-        "ctest", "--build-config", config.name, ".",
+        "ctest",
+        "--build-config", config.name,
+        ".",
     }
     execute(cmakeCommandArgs)
 end
@@ -62,7 +63,6 @@ local function cmakePack(config)
         "cpack",
         "-G", "ZIP",
         "-C", config.name,
-        -- "-D", [[CPACK_COMPONENTS_ALL="test"]],
     }
     execute(cmakeCommandArgs)
 end
