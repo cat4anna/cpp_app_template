@@ -28,6 +28,7 @@ pipeline {
                     }
                     steps {
                         sh '/usr/bin/lua5.4 ci/ci_run.lua all-debug'
+                        xunit checksName: '', thresholds: [failed(unstableThreshold: '0')], tools: [GoogleTest(excludesPattern: '', pattern: 'build/*/Testing/*.xml', stopProcessingIfError: true)]
                     }
                 }
                 stage('Release') {
@@ -46,7 +47,6 @@ pipeline {
         stage('Archive artifacts') {
             steps {
                 archiveArtifacts artifacts: '**/Artifacts/*', followSymlinks: false
-                xunit checksName: '', thresholds: [failed(unstableThreshold: '0')], tools: [GoogleTest(excludesPattern: '', pattern: 'build/**/Testing/**.xml', stopProcessingIfError: true)]
                 scanForIssues sourceCodeRetention: 'LAST_BUILD', tool: clang()
             }
         }
