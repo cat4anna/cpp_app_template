@@ -1,9 +1,17 @@
 
 set(TARGET_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/output/${CMAKE_BUILD_TYPE}")
+set(ARTIFACTS_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Artifacts")
+set(TESTS_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Testing")
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TARGET_DESTINATION})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TARGET_DESTINATION})
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install")
-message(STATUS "Target destination: " ${TARGET_DESTINATION})
+
+message(STATUS "Target destination: ${TARGET_DESTINATION}")
+message(STATUS "Artifacts destination: ${ARTIFACTS_DESTINATION}")
+message(STATUS "Tests destination: ${TESTS_DESTINATION}")
+
+make_directory(${ARTIFACTS_DESTINATION})
 
 if(CMAKE_SYSTEM MATCHES Windows)
     set(APP_INSTALL_CONFIG
@@ -45,9 +53,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DDEBUG)
 endif()
 
-find_program(clang_tidy_executable NAMES clang-tidy)
+find_program(CLANG_TIDY_EXECUTABLE NAMES clang-tidy)
 
-if(NOT clang_tidy_executable)
+if(NOT CLANG_TIDY_EXECUTABLE)
     if(APP_DO_CLANG_TIDY)
         message(FATAL_ERROR "Clang-tidy enabled but executable is not found")
     else()
@@ -56,8 +64,8 @@ if(NOT clang_tidy_executable)
     endif()
 else()
     if(APP_DO_CLANG_TIDY)
-        message(STATUS "Using clang-tidy ${clang_tidy_executable}")
-        set(CMAKE_CXX_CLANG_TIDY ${clang_tidy_executable} --header-filter=${CMAKE_CURRENT_SOURCE_DIR}/.*)
+        message(STATUS "Using clang-tidy ${CLANG_TIDY_EXECUTABLE}")
+        set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXECUTABLE} --header-filter=${CMAKE_CURRENT_SOURCE_DIR}/.*)
         if (APP_CLANG_TIDY_WARNINGS_AS_ERRORS)
             set(CMAKE_CXX_CLANG_TIDY ${CMAKE_CXX_CLANG_TIDY} --warnings-as-errors=*)
         endif()

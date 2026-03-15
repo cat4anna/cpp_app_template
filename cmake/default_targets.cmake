@@ -9,6 +9,17 @@ if(APP_DO_UNIT_TEST)
     enable_testing()
     add_custom_target(build_all_test ALL)
     add_custom_target(execute_all_test)
+
+    make_directory(${TESTS_DESTINATION})
+
+    SET(TEST_RESULTS_FILE_NAME "${ARTIFACTS_DESTINATION}/${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION}-${VCPKG_TARGET_TRIPLET}-test-results.zip")
+    add_custom_target(
+        collect_test_results
+        COMMAND ${CMAKE_COMMAND} -E tar "cf" "${TEST_RESULTS_FILE_NAME}" "./*"
+        WORKING_DIRECTORY ${TESTS_DESTINATION}
+        COMMENT "Collecting test results"
+        )
+    add_dependencies(execute_all_test collect_test_results)
 else()
     message(STATUS "Disabling tests")
 endif()
@@ -83,14 +94,14 @@ function(define_ut_target target_name ut_name)
 
     add_test(
         NAME test_${target_ut_name}
-        COMMAND ${target_ut_name} --gtest_shuffle --gtest_output=xml:${TEST_RESULT_DIR}/${target_ut_name}.xml
+        COMMAND ${target_ut_name} --gtest_shuffle --gtest_output=xml:${TESTS_DESTINATION}/${target_ut_name}.xml
         WORKING_DIRECTORY ${TARGET_DESTINATION}
         )
 
     set_property(
         TARGET run_${target_ut_name}
         APPEND
-        PROPERTY ADDITIONAL_CLEAN_FILES ${TEST_RESULT_DIR}/${target_ut_name}.xml
+        PROPERTY ADDITIONAL_CLEAN_FILES ${TESTS_DESTINATION}/${target_ut_name}.xml
         )
 
     install(
@@ -102,6 +113,7 @@ function(define_ut_target target_name ut_name)
         )
 
     add_dependencies(execute_all_test run_${target_ut_name})
+    add_dependencies(collect_test_results run_${target_ut_name})
     add_dependencies(build_all_test ${target_ut_name})
 endfunction()
 

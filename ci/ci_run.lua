@@ -18,7 +18,7 @@ local function cleanWS(config)
 end
 
 local function cmakeConfigure(config)
-    local cmakeCommandArgs = {
+    execute {
         "cmake",
         "-G", config.generator,
         "-D", "JENKINS_BUILD_NUMBER=" .. (os.getenv("BUILD_NUMBER") or "0"),
@@ -28,44 +28,45 @@ local function cmakeConfigure(config)
         "-S", config.srcDir,
         "-B", config.buildDir,
     }
-    execute(cmakeCommandArgs)
 end
 
 local function cmakeBuild(config)
-    local cmakeCommandArgs = {
+    local cmakeCommandArgs =
+    execute {
         "cmake",
         "--build", ".",
         "--config", config.name,
     }
-    execute(cmakeCommandArgs)
 end
 
 local function cmakeInstall(config)
-    local cmakeCommandArgs = {
+    execute {
         "cmake",
         "--install", ".",
         "--config", config.name,
     }
-    execute(cmakeCommandArgs)
 end
 
 local function cmakeTest(config)
-    local cmakeCommandArgs = {
+    execute {
         "ctest",
         ".",
         "--build-config", config.name,
-        "--verbose",
     }
-    execute(cmakeCommandArgs)
+    execute {
+        "cmake",
+        "--build", ".",
+        "--config", config.name,
+        "--target", "collect_test_results",
+    }
 end
 
 local function cmakePack(config)
-    local cmakeCommandArgs = {
+    execute {
         "cpack",
         "-G", "ZIP",
         "-C", config.name,
     }
-    execute(cmakeCommandArgs)
 end
 
 Commands = {
