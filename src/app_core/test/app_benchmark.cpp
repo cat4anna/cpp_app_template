@@ -1,4 +1,3 @@
-#if 0
 #include <benchmark/benchmark.h>
 // #include <benchmark/state.h>
 
@@ -24,13 +23,13 @@ struct FVector2D
     FVector2D& operator=(FVector2D&& Other) = default;
 };
 
-__declspec(noinline) FVector2D Calculation0()
+FVector2D Calculation0()
 {
   FVector2D Value = {"a", "a"};
-  return std::move(Value);
+  return Value;
 }
 
-__declspec(noinline) void Calculation1(FVector2D& OutResult)
+void Calculation1(FVector2D& OutResult)
 {
   OutResult = {"a", "a"};
 }
@@ -69,4 +68,3 @@ BENCHMARK(B1)->Name("FVectorBench11");
 BENCHMARK(B1)->Name("FVectorBench12");
 BENCHMARK(B1)->Name("FVectorBench13");
 BENCHMARK(B1)->Name("FVectorBench14");
-#endif

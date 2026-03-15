@@ -52,12 +52,7 @@ local function cmakeTest(config)
         "ctest",
         ".",
         "--build-config", config.name,
-    }
-    execute {
-        "cmake",
-        "--build", ".",
-        "--config", config.name,
-        "--target", "collect_test_results",
+        "--verbose",
     }
 end
 

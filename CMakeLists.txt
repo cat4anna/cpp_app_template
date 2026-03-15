@@ -7,6 +7,7 @@ include("add_all_subdirectories")
 include("configuration")
 include("compiler_setup")
 include("setup_packages")
+include("sub_targets")
 include("default_targets")
 include("packaging")
 
