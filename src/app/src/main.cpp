@@ -1,6 +1,6 @@
-#include <iostream>
 #include "arg_parse.hpp"
 #include "runner.hpp"
+#include <iostream>
 
 void PrintDefs() {
     std::cout

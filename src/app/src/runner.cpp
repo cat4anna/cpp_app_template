@@ -1,8 +1,8 @@
-#include <iostream>
 #include <format>
+#include <iostream>
 
-#include <app_core/sum.hpp>
 #include "runner.hpp"
+#include <app_core/sum.hpp>
 
 namespace app::runner {
 
@@ -35,4 +35,4 @@ int ExecuteApp(const ExecArguments &args) {
     return std::make_unique<AppRunner>(args)->Run();
 }
 
-}
+} // namespace app::runner

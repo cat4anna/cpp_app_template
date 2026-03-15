@@ -8,4 +8,4 @@ struct ExecArguments {
     int b = 0;
 };
 
-}
+} // namespace app

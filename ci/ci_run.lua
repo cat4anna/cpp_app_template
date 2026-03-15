@@ -52,8 +52,9 @@ end
 local function cmakeTest(config)
     local cmakeCommandArgs = {
         "ctest",
-        "--build-config", config.name,
         ".",
+        "--build-config", config.name,
+        "--verbose",
     }
     execute(cmakeCommandArgs)
 end
