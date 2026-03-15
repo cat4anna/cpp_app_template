@@ -1,0 +1,44 @@
+Checks:
+    - "*"
+    - bugprone-*
+    - cert-dcl21-cpp
+    - cert-dcl50-cpp
+    - cert-env33-c
+    - cert-err34-c
+    - cert-err52-cpp
+    - cert-err60-cpp
+    - cert-flp30-c
+    - cert-msc50-cpp
+    - cert-msc51-cpp
+    - cppcoreguidelines-*
+    - -cppcoreguidelines-macro-usage
+    - -cppcoreguidelines-pro-type-reinterpret-cast
+    - -cppcoreguidelines-pro-type-union-access
+    - -cppcoreguidelines-pro-bounds-pointer-arithmetic
+    - -cppcoreguidelines-pro-type-vararg
+    - google-build-using-namespace
+    - google-explicit-constructor
+    - google-global-names-in-headers
+    - google-readability-casting
+    - google-runtime-int
+    - google-runtime-operator
+    - hicpp-*
+    - -hicpp-vararg
+    - misc-*
+    - modernize-*
+    - performance-*
+    - readability-*
+    - -readability-named-parameter'
+    - -llvm-header-guard
+CheckOptions:
+    - key: bugprone-argument-comment.StrictMode
+      value: 1
+    - key: bugprone-exception-escape.FunctionsThatShouldNotThrow
+      value: WinMain,SDL_main
+    - key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
+      value: 1
+FormatStyle: "file"
+
+
+# -checks=modernize*,diagnostic*,cppcoreguidelines*,readability*,clang-analyzer*,bugprone*,performance*,-diagnostic-missing-field-initializers,-modernize-use-trailing-return-type,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-readability-uppercase-literal-suffix,-modernize-use-nodiscard,-modernize-pass-by-value,-readability-convert-member-functions-to-static,-readability-qualified-auto,-performance-unnecessary-value-param,-performance-unnecessary-value-param,-cppcoreguidelines-non-private-member-variables-in-classes,-readability-else-after-return,-cppcoreguidelines-special-member-functions,-cppcoreguidelines-pro-type-member-init,-cppcoreguidelines-pro-type-member-init,-bugprone-reserved-identifier,-modernize-use-equals-default,-readability-named-parameter,-cppcoreguidelines-macro-usage,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-modernize-use-nullptr,-clang-diagnostic-unused-private-field,-cppcoreguidelines-pro-type-reinterpret-cast,-cppcoreguidelines-pro-type-const-cast,-readability-use-anyofallof,-cppcoreguidelines-pro-type-vararg
+

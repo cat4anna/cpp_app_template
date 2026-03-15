@@ -5,60 +5,70 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TARGET_DESTINATION})
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install")
 message(STATUS "Target destination: " ${TARGET_DESTINATION})
 
-set(TEST_RESULT_DIR ${CMAKE_CURRENT_BINARY_DIR}/Testing)
-file(MAKE_DIRECTORY ${TEST_RESULT_DIR})
-
-enable_testing()
-
-if(WIN32)
+if(CMAKE_SYSTEM MATCHES Windows)
     set(APP_INSTALL_CONFIG
         RUNTIME_DEPENDENCIES
         PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
         POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
     )
-else()
+
+    add_definitions(-DPLATFORM_WINDOWS=1)
+    add_definitions(-DPLATFORM_LINUX=0)
+    add_definitions(-DPLATFORM_NAME=\"Windows\")
+
+else(CMAKE_HOST_SYSTEM MATCHES Linux)
     # set(APP_INSTALL_CONFIG)
+
+    add_definitions(-DPLATFORM_WINDOWS=0)
+    add_definitions(-DPLATFORM_LINUX=1)
+    add_definitions(-DPLATFORM_NAME=\"Linux\")
 endif()
 
-if(MSVC)
-  add_compile_options(/external:anglebrackets /external:W0 /W4 /diagnostics:caret) # /WX
-  add_compile_options(/wd4100) # unreferenced formal parameter
-  add_compile_options(/wd4275) # non dll-interface class
-else()
-  add_compile_options(-Wall -Wextra -pedantic) # -Werror
-  add_compile_options(-Wno-unused-parameter)
-  add_compile_options(-Wno-missing-field-initializers)
-  add_compile_options(-Wno-gnu-zero-variadic-macro-arguments)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-Wall -Wextra -Werror -pedantic)
+    add_compile_options(-Wno-unused-parameter)
+    add_compile_options(-Wno-missing-field-initializers)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(/external:anglebrackets /external:W0 /W4 /WX /diagnostics:caret)
+    add_compile_options(/wd4100) # unreferenced formal parameter
+    add_compile_options(/wd4275) # non dll-interface class
 endif()
 
-if(WIN32)
-  add_definitions(-DWINDOWS)
-elseif(LINUX)
-  add_definitions(-DLINUX)
-endif()
+add_definitions(-DBUILD_TYPE=\"${CMAKE_BUILD_TYPE}\")
+add_definitions(-DVCPKG_TRIPLET=\"${VCPKG_TARGET_TRIPLET}\")
+add_definitions(-DPROJECT_VERSION=\"${CMAKE_PROJECT_VERSION}\")
+add_definitions(-DPROJECT_DESCRIPTION=\"${CMAKE_PROJECT_DESCRIPTION}\")
+add_definitions(-DPROJECT_BUILD_NUMBER=\"${CURRENT_BUILD_NUMBER}\")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  message(STATUS "Enabling debug features")
-  add_definitions(-DDEBUG)
+    message(STATUS "Enabling debug features")
+    add_definitions(-DDEBUG)
 endif()
 
 find_program(clang_tidy_executable NAMES clang-tidy)
-if(MSVC OR NOT clang_tidy_executable)
-  message(STATUS "Disabling clang-tidy")
-  set(CLANG_TIDY_COMMAND "")
+
+if(NOT clang_tidy_executable)
+    if(APP_DO_CLANG_TIDY)
+        message(FATAL_ERROR "Clang-tidy enabled but executable is not found")
+    else()
+        message(STATUS "Disabling clang-tidy.")
+        set(CMAKE_CXX_CLANG_TIDY "")
+    endif()
 else()
-  message(STATUS "Using clang-tidy ${clang_tidy_executable}")
-  set(CLANG_TIDY_COMMAND
-      ${clang_tidy_executable} -header-filter=${CMAKE_CURRENT_SOURCE_DIR}/.*
-      --warnings-as-errors=*
-      -checks=modernize*,diagnostic*,cppcoreguidelines*,readability*,clang-analyzer*,bugprone*,performance*,-diagnostic-missing-field-initializers,-modernize-use-trailing-return-type,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-readability-uppercase-literal-suffix,-modernize-use-nodiscard,-modernize-pass-by-value,-readability-convert-member-functions-to-static,-readability-qualified-auto,-performance-unnecessary-value-param,-performance-unnecessary-value-param,-cppcoreguidelines-non-private-member-variables-in-classes,-readability-else-after-return,-cppcoreguidelines-special-member-functions,-cppcoreguidelines-pro-type-member-init,-cppcoreguidelines-pro-type-member-init,-bugprone-reserved-identifier,-modernize-use-equals-default,-readability-named-parameter,-cppcoreguidelines-macro-usage,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-modernize-use-nullptr,-clang-diagnostic-unused-private-field,-cppcoreguidelines-pro-type-reinterpret-cast,-cppcoreguidelines-pro-type-const-cast,-readability-use-anyofallof,-cppcoreguidelines-pro-type-vararg
-  )
+    if(APP_DO_CLANG_TIDY)
+        message(STATUS "Using clang-tidy ${clang_tidy_executable}")
+        set(CMAKE_CXX_CLANG_TIDY ${clang_tidy_executable} -header-filter=${CMAKE_CURRENT_SOURCE_DIR}/.*)
+        if (APP_CLANG_TIDY_WARNINGS_AS_ERRORS)
+            set(CMAKE_CXX_CLANG_TIDY ${CMAKE_CXX_CLANG_TIDY} --warnings-as-errors=*)
+        endif()
+    elseif()
+        message(STATUS "Clang-tidy found, but usage was not request. Disabling.")
+    endif()
 endif()
 
-function(enable_clang_tidy TARGET_NAME)
-  set_target_properties(${TARGET_NAME} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+function(setup_clang_tidy TARGET_NAME)
+    if(APP_DO_CLANG_TIDY)
+        set_target_properties(${TARGET_NAME} PROPERTIES CXX_CLANG_TIDY "${CMAKE_CXX_CLANG_TIDY}")
+    endif()
 endfunction()
 
-function(disable_clang_tidy TARGET_NAME)
-  set_target_properties(${TARGET_NAME} PROPERTIES CXX_CLANG_TIDY "")
-endfunction()

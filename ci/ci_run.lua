@@ -4,7 +4,10 @@ local lfs = require "lfs"
 
 local function execute(t)
     local command = "\"" .. table.concat(t, "\" \"") .. "\""
-    os.execute(command)
+    local success, reason, code = os.execute(command)
+    if not success then
+        os.exit(1)
+    end
 end
 
 local function cleanWS(config)
