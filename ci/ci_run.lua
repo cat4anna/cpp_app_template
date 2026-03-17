@@ -100,19 +100,19 @@ local function getConfig(configName)
         debug = {
             name = "Debug",
             tripletSuffix = "",
-            packageSuffix = "debug",
+            buildDirSuffix = "-debug",
         },
         release = {
             name = "RelWithDebInfo",
             tripletSuffix = "-release",
-            packageSuffix = "relwithdebinfo",
+            buildDirSuffix = "-release",
         }
     }
     local config = map[configName:lower()]
     config.generator = "Ninja"
     config.triplet = os.getenv("VCPKG_TARGET_TRIPLET") .. config.tripletSuffix
     config.srcDir = srcDir
-    config.buildDir = string.format("%s/build/%s", srcDir, config.triplet)
+    config.buildDir = string.format("%s/build/%s%s", srcDir, os.getenv("VCPKG_TARGET_TRIPLET"), config.buildDirSuffix)
     return config
 end
 

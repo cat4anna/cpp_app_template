@@ -28,6 +28,11 @@ pipeline {
                     }
                     steps {
                         sh '/usr/bin/lua5.4 ci/ci_run.lua all-debug'
+                        xunit checksName: '', thresholds: [failed(unstableThreshold: '0')], tools: [
+                            GoogleTest(
+                                excludesPattern: '',
+                                pattern: 'build/*debug/Testing/*ut.xml',
+                                stopProcessingIfError: true)]
                     }
                 }
                 stage('Release') {
@@ -39,43 +44,40 @@ pipeline {
                     }
                     steps {
                         sh '/usr/bin/lua5.4 ci/ci_run.lua all-release'
+                        benchmark(
+                            altInputSchemaLocation: '',
+                            altInputSchema: '''{
+                                "description": "Google Benchmark JSON schema",
+                                "failure": { "value": true },
+                                "type": "object",
+                                "properties": {
+                                    "benchmarks": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "name": { "type": "name" },
+                                                "real_time": { "type": "result" },
+                                                "cpu_time": { "type": "result" },
+                                                "iterations": { "type": "parameter" }
+                                            }
+                                        }
+                                    }
+                                }
+                            }''',
+                            inputLocation: 'build/*release/Testing/*benchmark.json',
+                            schemaSelection: 'customSchema',
+                            truncateStrings: false
+                        )
                     }
                 }
             }
         }
-        stage('Archive artifacts') {
-            steps {
-                archiveArtifacts artifacts: '**/Artifacts/*', followSymlinks: false
-                scanForIssues sourceCodeRetention: 'LAST_BUILD', tool: clang()
-                xunit checksName: '', thresholds: [failed(unstableThreshold: '0')], tools: [
-                    GoogleTest(excludesPattern: 'build/*release/Testing/*ut.xml', pattern: 'build/*/Testing/*ut.xml', stopProcessingIfError: true)]
-                benchmark(
-                    altInputSchemaLocation: '',
-                    altInputSchema: '''{
-                        "description": "Google Benchmark JSON schema",
-                        "failure": { "value": true },
-                        "type": "object",
-                        "properties": {
-                            "benchmarks": {
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "name": { "type": "name" },
-                                        "real_time": { "type": "result" },
-                                        "cpu_time": { "type": "result" },
-                                        "iterations": { "type": "parameter" }
-                                    }
-                                }
-                            }
-                        }
-                    }''',
-                    inputLocation: 'build/*release/Testing/*benchmark.json',
-                    schemaSelection: 'customSchema',
-                    // thresholds: [[$class: 'PercentageThreshold', percentage: 1.0, testGroup: '', testName: 'cpu_time']],
-                    truncateStrings: false
-                )
-            }
+    }
+    post {
+        always {
+            archiveArtifacts artifacts: '**/Artifacts/*', followSymlinks: false
+            recordIssues sourceCodeRetention: 'LAST_BUILD', tools: [clang()]
         }
     }
 }
