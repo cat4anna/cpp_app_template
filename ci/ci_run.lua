@@ -24,6 +24,7 @@ local function cmakeConfigure(config)
         "-D", "JENKINS_BUILD_NUMBER=" .. (os.getenv("BUILD_NUMBER") or "0"),
         "-D", "CMAKE_BUILD_TYPE=" .. config.name,
         "-D", string.format("VCPKG_TARGET_TRIPLET=%s", config.triplet),
+        "-D", string.format("PACKAGE_NAME_SUFFIX=%s", config.packageSuffix),
         "--toolchain", os.getenv("CMAKE_TOOLCHAIN_FILE"),
         "-S", config.srcDir,
         "-B", config.buildDir,
@@ -61,6 +62,7 @@ local function cmakePack(config)
         "cpack",
         "-G", "ZIP",
         "-C", config.name,
+        "-D", string.format("PACKAGE_NAME_SUFFIX=%s", config.packageSuffix),
     }
 end
 
@@ -100,11 +102,13 @@ local function getConfig(configName)
         debug = {
             name = "Debug",
             tripletSuffix = "",
+            packageSuffix = "-debug",
             buildDirSuffix = "-debug",
         },
         release = {
             name = "RelWithDebInfo",
             tripletSuffix = "-release",
+            packageSuffix = "",
             buildDirSuffix = "-release",
         }
     }
