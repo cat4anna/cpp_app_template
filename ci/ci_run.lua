@@ -2,11 +2,16 @@
 
 local lfs = require "lfs"
 
+local dry_run = false
+
 local function execute(t)
-    local command = "\"" .. table.concat(t, "\" \"") .. "\""
-    local success, reason, code = os.execute(command)
-    if not success then
-        os.exit(1)
+    local command =  "\"" .. table.concat(t, "\" \"") .. "\""
+    print("Triggering: " .. command)
+    if not dry_run then
+        local success, reason, code = os.execute(command)
+        if not success then
+            os.exit(1)
+        end
     end
 end
 
@@ -14,56 +19,89 @@ local function cleanWS(config)
     lfs.chdir(config.srcDir)
     execute({ "rm", "-rf", config.buildDir })
     lfs.mkdir(config.buildDir)
-    lfs.chdir(config.buildDir)
+end
+
+local function addArgsToCmake(command, config, add_def, stage)
+    for k,v in pairs(config.args) do
+        if v.cmake and (v.value ~= nil) then
+            if add_def and v.cmake.definition then
+               table.insert(command, "-D")
+               table.insert(command, string.format("%s=%s", v.cmake.definition, v.value))
+            end
+            if (v.cmake[stage]) then
+               table.insert(command, v.cmake[stage])
+               table.insert(command, v.value)
+            end
+        end
+    end
+end
+
+local function executeCmakeCommand(command, config, stage, add_def)
+    local execPrefixArg = config.args["execute-prefix-" .. stage]
+    if execPrefixArg and execPrefixArg.value then
+        table.insert(command, 1, execPrefixArg.value)
+    end
+    addArgsToCmake(command, config, add_def, stage)
+    execute(command)
 end
 
 local function cmakeConfigure(config)
-    execute {
+    lfs.chdir(config.srcDir)
+    local command = {
         "cmake",
-        "-G", config.generator,
         "-D", "JENKINS_BUILD_NUMBER=" .. (os.getenv("BUILD_NUMBER") or "0"),
         "-D", "CMAKE_BUILD_TYPE=" .. config.name,
-        "-D", string.format("VCPKG_TARGET_TRIPLET=%s", config.triplet),
+        -- "-D", string.format("VCPKG_TARGET_TRIPLET=%s", config.triplet),
         "-D", string.format("PACKAGE_NAME_SUFFIX=%s", config.packageSuffix),
-        "--toolchain", os.getenv("CMAKE_TOOLCHAIN_FILE"),
+        -- "--toolchain", os.getenv("CMAKE_TOOLCHAIN_FILE"),
         "-S", config.srcDir,
         "-B", config.buildDir,
     }
+    executeCmakeCommand(command, config, "configure", true)
 end
 
 local function cmakeBuild(config)
-    local cmakeCommandArgs =
-    execute {
+    local command = {
         "cmake",
         "--build", ".",
         "--config", config.name,
+        "--verbose"
     }
+    executeCmakeCommand(command, config, "build")
 end
 
 local function cmakeInstall(config)
-    execute {
+    local command =  {
         "cmake",
         "--install", ".",
         "--config", config.name,
     }
+    executeCmakeCommand(command, config, "install")
 end
 
 local function cmakeTest(config)
-    execute {
+    if not(config.args["unit-test"].value ~= "OFF" and config.args["benchmark"].value ~= "OFF") then
+        print("Skipping tests")
+        return
+    end
+
+    local command =  {
         "ctest",
         ".",
         "--build-config", config.name,
         "--verbose",
     }
+    executeCmakeCommand(command, config, "test")
 end
 
 local function cmakePack(config)
-    execute {
+    local command =  {
         "cpack",
         "-G", "ZIP",
         "-C", config.name,
         "-D", string.format("PACKAGE_NAME_SUFFIX=%s", config.packageSuffix),
     }
+    executeCmakeCommand(command, config, "pack")
 end
 
 Commands = {
@@ -84,6 +122,83 @@ Commands = {
     pack = cmakePack,
 }
 
+local ArgsMap = {
+    platform = {
+        value = "linux",
+        allowed = {linux=1, windows=1, webassembly=1},
+        cmake = { definition = "APP_TARGET_CPU_PLATFORM" },
+        apply_values = {
+            webassembly = {
+                ["clang-tidy"] = "OFF",
+                ["unit-test"] = "OFF",
+                ["benchmark"] = "OFF",
+                ["execute-prefix-configure"] = "emcmake",
+            }
+        }
+    },
+    ["build-root"] = {
+        value = lfs.currentdir(),
+    },
+    ["install-root"] = {
+        cmake = { install = "--prefix" },
+    },
+    ["package-root"] = {
+        cmake = { pack = "-B" },
+    },
+    ["artifacts-root"] = {
+        cmake = { definition = "APP_ARTIFACTS_DESTINATION" },
+    },
+    generator = {
+        value = "Ninja",
+        cmake = { configure = "-G" },
+    },
+    ["clang-tidy"] = {
+        cmake = { definition = "APP_DO_CLANG_TIDY" },
+    },
+    ["unit-test"] = {
+        cmake = { definition = "APP_DO_UNIT_TEST" },
+    },
+    ["benchmark"] = {
+        cmake = { definition = "APP_DO_BENCHMARK" },
+    },
+    ["execute-prefix-configure"] = {},
+    ["execute-prefix-build"] = {},
+    ["execute-prefix-install"] = {},
+    ["execute-prefix-test"] = {},
+    ["execute-prefix-pack"] = {},
+}
+
+local ConfigurationMap = {
+    amd64 = {
+        debug = {
+            name = "Debug",
+            tripletSuffix = "",
+            packageSuffix = "-debug",
+            buildDirSuffix = "-debug",
+        },
+        release = {
+            name = "RelWithDebInfo",
+            tripletSuffix = "-release",
+            packageSuffix = "",
+            buildDirSuffix = "-release",
+        }
+    },
+    wasm32 = {
+        debug = {
+            name = "Debug",
+            tripletSuffix = "",
+            packageSuffix = "-debug",
+            buildDirSuffix = "-debug",
+        },
+        release = {
+            name = "RelWithDebInfo",
+            tripletSuffix = "",
+            packageSuffix = "-release",
+            buildDirSuffix = "-release",
+        }
+    }
+}
+
 local function processAction(handler, config)
     if (type(handler) == "table") then
         for _, what in ipairs(handler) do
@@ -98,33 +213,54 @@ end
 
 local function getConfig(configName)
     local srcDir = lfs.currentdir()
-    local map = {
-        debug = {
-            name = "Debug",
-            tripletSuffix = "",
-            packageSuffix = "-debug",
-            buildDirSuffix = "-debug",
-        },
-        release = {
-            name = "RelWithDebInfo",
-            tripletSuffix = "-release",
-            packageSuffix = "",
-            buildDirSuffix = "-release",
-        }
-    }
-    local config = map[configName:lower()]
-    config.generator = "Ninja"
+    local config = ConfigurationMap[ArgsMap.platform.value][configName:lower()]
+    config.args = ArgsMap
     config.triplet = os.getenv("VCPKG_TARGET_TRIPLET") .. config.tripletSuffix
     config.srcDir = srcDir
-    config.buildDir = string.format("%s/build/%s%s", srcDir, os.getenv("VCPKG_TARGET_TRIPLET"), config.buildDirSuffix)
+    config.buildDir = string.format("%s/build/%s%s", ArgsMap["build-root"].value, os.getenv("VCPKG_TARGET_TRIPLET"), config.buildDirSuffix)
     return config
+end
+
+local function setArg(argName, value)
+    if not ArgsMap[argName] then
+        print(string.format("ERROR: argument %s is not valid", argName))
+        os.exit(1)
+    end
+    local argConfig = ArgsMap[argName]
+    if argConfig.allowed and (not argConfig.allowed[value]) then
+        print(string.format("ERROR: Value %s is not valid for %s", value, argName))
+        os.exit(1)
+    end
+
+    print(string.format("Setting %s=%s", argName, value))
+    argConfig.value = value
+    if argConfig.apply_values then
+        local av = argConfig.apply_values[value]
+        if av then
+            for k,v in pairs(av) do
+                setArg(k, v)
+            end
+        end
+    end
 end
 
 local function main(argTable)
     for _, action in ipairs(argTable) do
-        local command, configName = action:match("(%w+)-?(%w+)")
-        local config = getConfig(configName)
-        processAction(Commands[command], config)
+        if action == "dry-run" then
+            print("Entering dry-run mode")
+            dry_run = true
+        elseif action:match("=") then
+            local first, second = action:match("([^=]+)=([^=]+)")
+            setArg(first, second)
+
+        else
+            local first, second = action:match("(%w+)-?(%w*)")
+            if second == "" then
+                second = nil
+            end
+            local config = getConfig(second or "release")
+            processAction(Commands[first], config)
+        end
     end
 end
 

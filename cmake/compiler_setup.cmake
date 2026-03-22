@@ -1,19 +1,39 @@
 
 set(TARGET_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/output/${CMAKE_BUILD_TYPE}")
-set(ARTIFACTS_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Artifacts")
+
+if (NOT DEFINED APP_ARTIFACTS_DESTINATION)
+    set(APP_ARTIFACTS_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Artifacts")
+endif()
+
 set(TESTS_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Testing")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TARGET_DESTINATION})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TARGET_DESTINATION})
 set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install")
+make_directory(${APP_ARTIFACTS_DESTINATION})
 
 message(STATUS "Target destination: ${TARGET_DESTINATION}")
-message(STATUS "Artifacts destination: ${ARTIFACTS_DESTINATION}")
+message(STATUS "Artifacts destination: ${APP_ARTIFACTS_DESTINATION}")
 message(STATUS "Tests destination: ${TESTS_DESTINATION}")
+message(STATUS "Host system: ${CMAKE_HOST_SYSTEM}")
+message(STATUS "target cpu: ${APP_TARGET_CPU_PLATFORM}")
 
-make_directory(${ARTIFACTS_DESTINATION})
+if (NOT DEFINED APP_TARGET_PLATFORM)
+    message(STATUS "Target system not defined, trying to detect")
+    if(APP_TARGET_CPU_PLATFORM MATCHES webassembly)
+        set(APP_TARGET_PLATFORM webassembly)
+    elseif(CMAKE_SYSTEM MATCHES Windows)
+        set(APP_TARGET_PLATFORM windows)
+    elseif(CMAKE_HOST_SYSTEM MATCHES Linux)
+        set(APP_TARGET_PLATFORM linux)
+    else()
+        message(FATAL_ERROR "Unknown target system")
+    endif()
+endif()
 
-if(CMAKE_SYSTEM MATCHES Windows)
+message(STATUS "Target platform: ${APP_TARGET_PLATFORM}")
+
+if(APP_TARGET_PLATFORM MATCHES Windows)
     set(APP_INSTALL_CONFIG
         RUNTIME_DEPENDENCIES
         PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
@@ -21,15 +41,22 @@ if(CMAKE_SYSTEM MATCHES Windows)
     )
 
     add_definitions(-DPLATFORM_WINDOWS=1)
-    add_definitions(-DPLATFORM_LINUX=0)
     add_definitions(-DPLATFORM_NAME=\"Windows\")
 
-else(CMAKE_HOST_SYSTEM MATCHES Linux)
+elseif(APP_TARGET_PLATFORM MATCHES Linux)
     # set(APP_INSTALL_CONFIG)
 
-    add_definitions(-DPLATFORM_WINDOWS=0)
     add_definitions(-DPLATFORM_LINUX=1)
     add_definitions(-DPLATFORM_NAME=\"Linux\")
+elseif(APP_TARGET_PLATFORM MATCHES Webassembly)
+
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+    # set_target_properties(a PROPERTIES LINK_FLAGS "-s WASM=0 -s EXPORTED_FUNCTIONS='[_main]'")
+
+    add_definitions(-DPLATFORM_WEBASSEMBLY=1)
+    add_definitions(-DPLATFORM_NAME=\"Webassembly\")
+else()
+    message(FATAL_ERROR "Invalid target system")
 endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -42,6 +69,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(/wd4275) # non dll-interface class
 endif()
 
+add_definitions(-DPLATFORM_NAME=\"${APP_TARGET_PLATFORM}\")
 add_definitions(-DBUILD_TYPE=\"${CMAKE_BUILD_TYPE}\")
 add_definitions(-DVCPKG_TRIPLET=\"${VCPKG_TARGET_TRIPLET}\")
 add_definitions(-DPROJECT_VERSION=\"${CMAKE_PROJECT_VERSION}\")

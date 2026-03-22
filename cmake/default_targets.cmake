@@ -43,14 +43,13 @@ function(define_static_lib target_name)
     endif()
 endfunction()
 
-function(define_executable target_name )
+function(define_executable target_name)
     file(GLOB_RECURSE SRC src/*.cpp src/*.hpp include/*.hpp)
 
     message(STATUS "Adding executable ${target_name}")
     add_executable(${target_name} ${SRC})
     target_include_directories(${target_name} PUBLIC include)
     target_include_directories(${target_name} PRIVATE src)
-    target_link_libraries(${target_name} PUBLIC Boost::program_options)
 
     add_dependencies(build_all_executables ${target_name})
     setup_clang_tidy(${target_name})
@@ -62,24 +61,43 @@ function(define_executable target_name )
         ${APP_INSTALL_CONFIG}
         )
 
+    if(EMSCRIPTEN)
+        install(
+            FILES
+                $<TARGET_FILE_DIR:${target_name}>/${target_name}.wasm
+                $<TARGET_FILE_DIR:${target_name}>/${target_name}.js
+            COMPONENT main
+            DESTINATION "."
+            ${APP_INSTALL_CONFIG}
+            )
+    endif()
+
     set(TARGET ${target_name} PARENT_SCOPE)
 endfunction()
 
 function(define_static_lib_with_ut target_name)
     define_static_lib(${target_name})
-    define_ut_multi_target(${target_name} test)
+    if (APP_DO_UNIT_TEST)
+        define_ut_multi_target(${target_name} test)
+    endif()
     set(TARGET ${target_name} PARENT_SCOPE)
 endfunction()
 
 function(define_static_lib_with_ut_and_benchmark target_name)
     define_static_lib(${target_name})
-    define_ut_multi_target(${target_name} test)
-    define_benchmark_multi_target(${target_name} test)
+    if (APP_DO_UNIT_TEST)
+        define_ut_multi_target(${target_name} test)
+    endif()
+    if (APP_DO_BENCHMARK)
+        define_benchmark_multi_target(${target_name} test)
+    endif()
     set(TARGET ${target_name} PARENT_SCOPE)
 endfunction()
 
 function(define_static_lib_with_benchmark target_name)
     define_static_lib(${target_name})
-    define_benchmark_multi_target(${target_name} test)
+    if (APP_DO_BENCHMARK)
+        define_benchmark_multi_target(${target_name} test)
+    endif()
     set(TARGET ${target_name} PARENT_SCOPE)
 endfunction()

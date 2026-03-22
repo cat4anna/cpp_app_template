@@ -2,7 +2,6 @@
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_EXPORT_COMPILE_COMMAND ON)
 
-
 # cmake_policy(SET CMP0167 NEW)
 
 if(DEFINED JENKINS_BUILD_NUMBER)
@@ -15,21 +14,29 @@ set(CMAKE_PROJECT_VERSION 0.0.1.${CURRENT_BUILD_NUMBER})
 set(CMAKE_PROJECT_DESCRIPTION "An template for making c++ apps")
 
 if(DEFINED JENKINS_BUILD_NUMBER)
-    # enable clang-tidy only when running through ci scripts
-    set(APP_DO_CLANG_TIDY ON)
+    if (NOT DEFINED APP_DO_CLANG_TIDY )
+        set(APP_DO_CLANG_TIDY ON)
+    endif()
 else()
     set(APP_DO_CLANG_TIDY OFF)
 endif()
-set(APP_CLANG_TIDY_WARNINGS_AS_ERRORS OFF)
+if (NOT DEFINED APP_CLANG_TIDY_WARNINGS_AS_ERRORS)
+    set(APP_CLANG_TIDY_WARNINGS_AS_ERRORS OFF)
+endif()
 
-set(APP_DO_UNIT_TEST ON)
+if (NOT DEFINED APP_DO_UNIT_TEST)
+    set(APP_DO_UNIT_TEST ON)
+endif()
 set(APP_UT_RUNNER_TARGET runner_ut)
 set(APP_UT_LIBS GTest::gmock GTest::gtest)
 set(APP_UT_RUN_ARGS "--gtest_shuffle")
 set(APP_UT_OUTPUT_FORMAT "xml")
 
-set(APP_DO_BENCHMARK ON)
+if (NOT DEFINED APP_DO_BENCHMARK)
+    set(APP_DO_BENCHMARK ON)
+endif()
 set(APP_BENCHMARK_RUNNER_TARGET runner_benchmark)
 set(APP_BENCHMARK_LIBS benchmark::benchmark)
-SET(APP_BENCHMARK_RUN_ARGS "--benchmark_enable_random_interleaving=true")
+set(APP_BENCHMARK_RUN_ARGS "--benchmark_enable_random_interleaving=true")
 set(APP_BENCHMARK_OUTPUT_FORMAT "json")
+
