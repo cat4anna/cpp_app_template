@@ -47,6 +47,18 @@ function(define_ut_target target_name ut_name)
         ${APP_INSTALL_CONFIG}
         )
 
+    if(EMSCRIPTEN)
+        install(
+            FILES
+                $<TARGET_FILE_DIR:${target_ut_name}>/${target_ut_name}.wasm
+                $<TARGET_FILE_DIR:${target_ut_name}>/${target_ut_name}.js
+            EXCLUDE_FROM_ALL
+            COMPONENT test
+            DESTINATION test
+            ${APP_INSTALL_CONFIG}
+            )
+    endif()
+
     add_dependencies(execute_all_tests run_${target_ut_name})
     add_dependencies(build_all_tests ${target_ut_name})
 endfunction()
@@ -119,6 +131,18 @@ function(define_benchmark_target target_name benchmark_name)
         DESTINATION test
         ${APP_INSTALL_CONFIG}
         )
+
+    if(EMSCRIPTEN)
+        install(
+            FILES
+                $<TARGET_FILE_DIR:${target_benchmark_name}>/${target_benchmark_name}.wasm
+                $<TARGET_FILE_DIR:${target_benchmark_name}>/${target_benchmark_name}.js
+            EXCLUDE_FROM_ALL
+            COMPONENT test
+            DESTINATION test
+            ${APP_INSTALL_CONFIG}
+            )
+    endif()
 
     add_dependencies(execute_all_tests run_${target_benchmark_name})
     add_dependencies(build_all_tests ${target_benchmark_name})

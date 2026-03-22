@@ -43,13 +43,27 @@ function(define_static_lib target_name)
     endif()
 endfunction()
 
-function(define_executable target_name)
-    file(GLOB_RECURSE SRC src/*.cpp src/*.hpp include/*.hpp)
+function(define_executable)
+    set(options)
+    set(oneValueArgs NAME)
+    set(multiValueArgs PLATFORMS LINKS)
+    cmake_parse_arguments(PARSE_ARGV 0 arg
+        "${options}" "${oneValueArgs}" "${multiValueArgs}"
+    )
+    set(target_name ${arg_NAME})
 
-    message(STATUS "Adding executable ${target_name}")
+    if (${APP_TARGET_PLATFORM} IN_LIST arg_PLATFORMS)
+        message(STATUS "Adding executable ${target_name}")
+    else()
+        message(STATUS "Skipping executable ${target_name} - not for current platform")
+        return()
+    endif()
+
+    file(GLOB_RECURSE SRC src/*.cpp src/*.hpp include/*.hpp)
     add_executable(${target_name} ${SRC})
     target_include_directories(${target_name} PUBLIC include)
     target_include_directories(${target_name} PRIVATE src)
+    target_link_libraries(${target_name} PUBLIC ${arg_LINKS})
 
     add_dependencies(build_all_executables ${target_name})
     setup_clang_tidy(${target_name})

@@ -5,7 +5,7 @@ local lfs = require "lfs"
 local dry_run = false
 
 local function execute(t)
-    local command =  "\"" .. table.concat(t, "\" \"") .. "\""
+    local command = "\"" .. table.concat(t, "\" \"") .. "\""
     print("Triggering: " .. command)
     if not dry_run then
         local success, reason, code = os.execute(command)
@@ -22,15 +22,13 @@ local function cleanWS(config)
 end
 
 local function addArgsToCmake(command, config, add_def, stage)
-    for k,v in pairs(config.args) do
+    for k, v in pairs(config.args) do
         if v.cmake and (v.value ~= nil) then
             if add_def and v.cmake.definition then
-               table.insert(command, "-D")
-               table.insert(command, string.format("%s=%s", v.cmake.definition, v.value))
+                table.insert(command, string.format("-D%s=%s", v.cmake.definition, v.value))
             end
-            if (v.cmake[stage]) then
-               table.insert(command, v.cmake[stage])
-               table.insert(command, v.value)
+            if v.cmake[stage] then
+                table.insert(command, string.format("%s=%s", v.cmake[stage], v.value))
             end
         end
     end
@@ -49,11 +47,13 @@ local function cmakeConfigure(config)
     lfs.chdir(config.srcDir)
     local command = {
         "cmake",
-        "-D", "JENKINS_BUILD_NUMBER=" .. (os.getenv("BUILD_NUMBER") or "0"),
-        "-D", "CMAKE_BUILD_TYPE=" .. config.name,
-        -- "-D", string.format("VCPKG_TARGET_TRIPLET=%s", config.triplet),
-        "-D", string.format("PACKAGE_NAME_SUFFIX=%s", config.packageSuffix),
-        -- "--toolchain", os.getenv("CMAKE_TOOLCHAIN_FILE"),
+        string.format("-DJENKINS_BUILD_NUMBER=%s", os.getenv("BUILD_NUMBER") or "0"),
+        string.format("-DCMAKE_BUILD_TYPE=%s", config.name),
+        string.format("-DVCPKG_TARGET_TRIPLET=%s", config.triplet),
+        string.format("-DPACKAGE_NAME_SUFFIX=%s", config.packageSuffix),
+        string.format("-DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=%s", os.getenv("VCPKG_CHAINLOAD_TOOLCHAIN_FILE") or ""),
+        string.format("-DCMAKE_TOOLCHAIN_FILE=%s", os.getenv("VCPKG_CMAKE_TOOLCHAIN_FILE") or ""),
+        string.format("--toolchain=%s", os.getenv("VCPKG_CMAKE_TOOLCHAIN_FILE")),
         "-S", config.srcDir,
         "-B", config.buildDir,
     }
@@ -65,37 +65,44 @@ local function cmakeBuild(config)
         "cmake",
         "--build", ".",
         "--config", config.name,
-        "--verbose"
     }
     executeCmakeCommand(command, config, "build")
 end
 
 local function cmakeInstall(config)
-    local command =  {
-        "cmake",
-        "--install", ".",
-        "--config", config.name,
+    local toInstall = {
+        "main",
     }
-    executeCmakeCommand(command, config, "install")
+    if (config.args["unit-test"].value ~= "OFF" or config.args["benchmark"].value ~= "OFF") then
+        table.insert(toInstall, "test")
+    end
+
+    for _, v in ipairs(toInstall) do
+        local command = {
+            "cmake",
+            "--install", ".",
+            "--config", config.name,
+            "--component=" .. v
+        }
+        executeCmakeCommand(command, config, "install")
+    end
 end
 
 local function cmakeTest(config)
-    if not(config.args["unit-test"].value ~= "OFF" and config.args["benchmark"].value ~= "OFF") then
+    if not (config.args["unit-test"].value ~= "OFF" and config.args["benchmark"].value ~= "OFF") then
         print("Skipping tests")
         return
     end
-
-    local command =  {
+    local command = {
         "ctest",
         ".",
         "--build-config", config.name,
-        "--verbose",
     }
     executeCmakeCommand(command, config, "test")
 end
 
 local function cmakePack(config)
-    local command =  {
+    local command = {
         "cpack",
         "-G", "ZIP",
         "-C", config.name,
@@ -110,8 +117,8 @@ Commands = {
         "configure",
         "build",
         "install",
-        "test",
         "pack",
+        "test",
     },
 
     clean = cleanWS,
@@ -125,13 +132,13 @@ Commands = {
 local ArgsMap = {
     platform = {
         value = "linux",
-        allowed = {linux=1, windows=1, webassembly=1},
+        allowed = { linux = 1, windows = 1, webassembly = 1 },
         cmake = { definition = "APP_TARGET_CPU_PLATFORM" },
         apply_values = {
             webassembly = {
                 ["clang-tidy"] = "OFF",
-                ["unit-test"] = "OFF",
-                ["benchmark"] = "OFF",
+                -- ["unit-test"] = "OFF",
+                -- ["benchmark"] = "OFF",
                 ["execute-prefix-configure"] = "emcmake",
             }
         }
@@ -168,22 +175,25 @@ local ArgsMap = {
     ["execute-prefix-pack"] = {},
 }
 
-local ConfigurationMap = {
-    amd64 = {
-        debug = {
-            name = "Debug",
-            tripletSuffix = "",
-            packageSuffix = "-debug",
-            buildDirSuffix = "-debug",
-        },
-        release = {
-            name = "RelWithDebInfo",
-            tripletSuffix = "-release",
-            packageSuffix = "",
-            buildDirSuffix = "-release",
-        }
+local WindowsLinuxPlatform = {
+    debug = {
+        name = "Debug",
+        tripletSuffix = "",
+        packageSuffix = "-debug",
+        buildDirSuffix = "-debug",
     },
-    wasm32 = {
+    release = {
+        name = "RelWithDebInfo",
+        tripletSuffix = "-release",
+        packageSuffix = "",
+        buildDirSuffix = "-release",
+    }
+}
+
+local ConfigurationMap = {
+    windows = WindowsLinuxPlatform,
+    linux = WindowsLinuxPlatform,
+    webassembly = {
         debug = {
             name = "Debug",
             tripletSuffix = "",
@@ -217,7 +227,8 @@ local function getConfig(configName)
     config.args = ArgsMap
     config.triplet = os.getenv("VCPKG_TARGET_TRIPLET") .. config.tripletSuffix
     config.srcDir = srcDir
-    config.buildDir = string.format("%s/build/%s%s", ArgsMap["build-root"].value, os.getenv("VCPKG_TARGET_TRIPLET"), config.buildDirSuffix)
+    config.buildDir = string.format("%s/build/%s%s", ArgsMap["build-root"].value, os.getenv("VCPKG_TARGET_TRIPLET"),
+        config.buildDirSuffix)
     return config
 end
 
@@ -237,7 +248,7 @@ local function setArg(argName, value)
     if argConfig.apply_values then
         local av = argConfig.apply_values[value]
         if av then
-            for k,v in pairs(av) do
+            for k, v in pairs(av) do
                 setArg(k, v)
             end
         end
@@ -252,7 +263,6 @@ local function main(argTable)
         elseif action:match("=") then
             local first, second = action:match("([^=]+)=([^=]+)")
             setArg(first, second)
-
         else
             local first, second = action:match("(%w+)-?(%w*)")
             if second == "" then

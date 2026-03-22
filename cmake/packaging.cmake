@@ -30,7 +30,7 @@ cpack_add_component(executables
 )
 
 if(APP_DO_UNIT_TEST OR APP_DO_BENCHMARK)
-    cpack_add_component(test
+    cpack_add_component(test-result
         DISPLAY_NAME "Test executables"
         DESCRIPTION "The test executables"
     )

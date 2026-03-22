@@ -33,7 +33,7 @@ endif()
 
 message(STATUS "Target platform: ${APP_TARGET_PLATFORM}")
 
-if(APP_TARGET_PLATFORM MATCHES Windows)
+if(APP_TARGET_PLATFORM MATCHES windows)
     set(APP_INSTALL_CONFIG
         RUNTIME_DEPENDENCIES
         PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
@@ -43,15 +43,11 @@ if(APP_TARGET_PLATFORM MATCHES Windows)
     add_definitions(-DPLATFORM_WINDOWS=1)
     add_definitions(-DPLATFORM_NAME=\"Windows\")
 
-elseif(APP_TARGET_PLATFORM MATCHES Linux)
-    # set(APP_INSTALL_CONFIG)
-
+elseif(APP_TARGET_PLATFORM MATCHES linux)
     add_definitions(-DPLATFORM_LINUX=1)
     add_definitions(-DPLATFORM_NAME=\"Linux\")
-elseif(APP_TARGET_PLATFORM MATCHES Webassembly)
-
+elseif(APP_TARGET_PLATFORM MATCHES webassembly)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
-    # set_target_properties(a PROPERTIES LINK_FLAGS "-s WASM=0 -s EXPORTED_FUNCTIONS='[_main]'")
 
     add_definitions(-DPLATFORM_WEBASSEMBLY=1)
     add_definitions(-DPLATFORM_NAME=\"Webassembly\")
@@ -69,7 +65,6 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(/wd4275) # non dll-interface class
 endif()
 
-add_definitions(-DPLATFORM_NAME=\"${APP_TARGET_PLATFORM}\")
 add_definitions(-DBUILD_TYPE=\"${CMAKE_BUILD_TYPE}\")
 add_definitions(-DVCPKG_TRIPLET=\"${VCPKG_TARGET_TRIPLET}\")
 add_definitions(-DPROJECT_VERSION=\"${CMAKE_PROJECT_VERSION}\")
@@ -79,6 +74,8 @@ add_definitions(-DPROJECT_BUILD_NUMBER=\"${CURRENT_BUILD_NUMBER}\")
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Enabling debug features")
     add_definitions(-DDEBUG)
+else()
+    add_definitions(-DRELEASE)
 endif()
 
 find_program(CLANG_TIDY_EXECUTABLE NAMES clang-tidy)
@@ -87,7 +84,7 @@ if(NOT CLANG_TIDY_EXECUTABLE)
     if(APP_DO_CLANG_TIDY)
         message(FATAL_ERROR "Clang-tidy enabled but executable is not found")
     else()
-        message(STATUS "Disabling clang-tidy.")
+        message(STATUS "Disabling clang-tidy")
         set(CMAKE_CXX_CLANG_TIDY "")
     endif()
 else()

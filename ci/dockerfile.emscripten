@@ -10,17 +10,21 @@ RUN emsdk activate latest
 
 ENV VCPKG_DISABLE_METRICS=1
 ENV VCPKG_FORCE_SYSTEM_BINARIES=1
-# ENV CMAKE_TOOLCHAIN_FILE=/workspace/vcpkg/scripts/buildsystems/vcpkg.cmake
 ENV WORKSPACE_DIR=/workspace
 ENV VCPKG_TARGET_TRIPLET=wasm32-emscripten
 ENV VCPKG_DIR="${WORKSPACE_DIR}/vcpkg"
 
-ADD ci/vcpkg_commands.txt "${WORKSPACE_DIR}/vcpkg_commands.txt"
+ENV VCPKG_CMAKE_TOOLCHAIN_FILE=/workspace/vcpkg/scripts/buildsystems/vcpkg.cmake
+ENV VCPKG_CHAINLOAD_TOOLCHAIN_FILE=/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+
+ADD ci/vcpkg_commands.txt "${WORKSPACE_DIR}/vcpkg_commands_webassembly.txt"
 RUN git clone --depth=1 https://github.com/microsoft/vcpkg.git "${VCPKG_DIR}"
 WORKDIR "${VCPKG_DIR}"
-# RUN \
-    # /bin/sh bootstrap-vcpkg.sh && \
-    # ./vcpkg install --triplet=${VCPKG_TARGET_TRIPLET} --clean-after-build "@${WORKSPACE_DIR}/vcpkg_commands.txt" && \
-    # true
+
+RUN \
+    /bin/sh bootstrap-vcpkg.sh && \
+    CMAKE_TOOLCHAIN_FILE=${VCPKG_CMAKE_TOOLCHAIN_FILE} \
+        ./vcpkg install --triplet=${VCPKG_TARGET_TRIPLET} --clean-after-build "@${WORKSPACE_DIR}/vcpkg_commands_webassembly.txt" && \
+    true
 
 WORKDIR "${WORKSPACE_DIR}"
