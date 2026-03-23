@@ -117,8 +117,8 @@ Commands = {
         "configure",
         "build",
         "install",
-        "pack",
         "test",
+        "pack",
     },
 
     clean = cleanWS,
@@ -133,12 +133,10 @@ local ArgsMap = {
     platform = {
         value = "linux",
         allowed = { linux = 1, windows = 1, webassembly = 1 },
-        cmake = { definition = "APP_TARGET_CPU_PLATFORM" },
+        cmake = { definition = "APP_TARGET_PLATFORM" },
         apply_values = {
             webassembly = {
                 ["clang-tidy"] = "OFF",
-                -- ["unit-test"] = "OFF",
-                -- ["benchmark"] = "OFF",
                 ["execute-prefix-configure"] = "emcmake",
             }
         }

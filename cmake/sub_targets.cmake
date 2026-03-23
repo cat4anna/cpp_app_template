@@ -18,18 +18,25 @@ function(define_ut_target target_name ut_name)
     target_include_directories(${target_ut_name} PRIVATE src test)
     target_link_libraries(${target_ut_name} PRIVATE ${target_name} ${APP_UT_LIBS} ${APP_UT_RUNNER_TARGET})
 
+    set(ut_result_file ${TESTS_DESTINATION}/${target_ut_name}.${APP_UT_OUTPUT_FORMAT})
+    if(EMSCRIPTEN)
+        set(ut_executable $<TARGET_FILE_DIR:${target_ut_name}>/${target_ut_name}.js)
+    else()
+        set(ut_executable ${target_ut_name})
+        set(APP_UT_RUN_ARGS ${APP_UT_RUN_ARGS} --gtest_output=${APP_UT_OUTPUT_FORMAT}:${ut_result_file})
+    endif()
+
     add_custom_target(
         run_${target_ut_name}
-        COMMAND ${target_ut_name} ${APP_UT_RUN_ARGS}
+        COMMAND ${CMAKE_TEST_LAUNCHER} ${ut_executable} ${APP_UT_RUN_ARGS}
         WORKING_DIRECTORY ${TARGET_DESTINATION}
         COMMENT "Running test ${target_ut_name}"
         DEPENDS ${target_ut_name} ${target_name}
         )
 
-    SET(ut_result_file ${TESTS_DESTINATION}/${target_ut_name}.${APP_UT_OUTPUT_FORMAT})
     add_test(
         NAME test_${target_ut_name}
-        COMMAND ${target_ut_name} ${APP_UT_RUN_ARGS} --gtest_output=${APP_UT_OUTPUT_FORMAT}:${ut_result_file}
+        COMMAND ${CMAKE_TEST_LAUNCHER} ${ut_executable} ${APP_UT_RUN_ARGS}
         WORKING_DIRECTORY ${TARGET_DESTINATION}
         )
 
@@ -104,9 +111,17 @@ function(define_benchmark_target target_name benchmark_name)
     target_link_libraries(${target_benchmark_name} PRIVATE ${target_name} ${APP_BENCHMARK_LIBS} ${APP_BENCHMARK_RUNNER_TARGET})
 
     SET(benchmark_result_file ${TESTS_DESTINATION}/${target_benchmark_name}.${APP_BENCHMARK_OUTPUT_FORMAT})
+
+    if(EMSCRIPTEN)
+        set(benchmark_executable ${CMAKE_TEST_LAUNCHER} $<TARGET_FILE_DIR:${target_benchmark_name}>/${target_benchmark_name}.js)
+    else()
+        set(benchmark_executable ${target_benchmark_name})
+        set(APP_BENCHMARK_RUN_ARGS ${APP_BENCHMARK_RUN_ARGS} --benchmark_out=${benchmark_result_file} --benchmark_out_format=${APP_BENCHMARK_OUTPUT_FORMAT})
+    endif()
+
     add_custom_target(
         run_${target_benchmark_name}
-        COMMAND ${target_benchmark_name} ${APP_BENCHMARK_RUN_ARGS}
+        COMMAND ${benchmark_executable} ${APP_BENCHMARK_RUN_ARGS}
         WORKING_DIRECTORY ${TARGET_DESTINATION}
         COMMENT "Running benchmark ${target_benchmark_name}"
         DEPENDS ${target_benchmark_name} ${target_name}
@@ -114,7 +129,7 @@ function(define_benchmark_target target_name benchmark_name)
 
     add_test(
         NAME benchmark_${target_benchmark_name}
-        COMMAND ${target_benchmark_name} ${APP_BENCHMARK_RUN_ARGS} --benchmark_out=${benchmark_result_file} --benchmark_out_format=${APP_BENCHMARK_OUTPUT_FORMAT}
+        COMMAND ${benchmark_executable} ${APP_BENCHMARK_RUN_ARGS}
         WORKING_DIRECTORY ${TARGET_DESTINATION}
         )
 
