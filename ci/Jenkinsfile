@@ -1,12 +1,15 @@
 pipeline {
     agent any
+    parameters {
+        choice(name: 'DOCKER_TYPE_NAME', choices: ['alpine', 'emsdk'], description: 'Docker image to use')
+        choice(name: 'TARGET_PLATFORM', choices: ['linux', 'webassembly'], description: 'Target platform')
+    }
     environment {
-        DOCKER_REUSE_DAYS=30
         APP_NAME = "cpp_app_template"
+        DOCKER_REUSE_DAYS=30
 
-        DOCKER_NAME = "alpine"
-        BUILD_ARGS = "platform=webassembly"
-
+        DOCKER_NAME = "${DOCKER_TYPE_NAME}"
+        BUILD_ARGS = "platform=${TARGET_PLATFORM}"
         DOCKER_TAG = "${APP_NAME}:${DOCKER_NAME}"
         DOCKER_FILE = "dockerfile.${DOCKER_NAME}"
     }
