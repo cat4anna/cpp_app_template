@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+    parameters {
+        booleanParam(name: 'BUILD_LINUX', defaultValue: true, description: 'Build linux target')
+        booleanParam(name: 'BUILD_WEBASSEMBLY', defaultValue: true, description: 'Build webassembly target')
+
+        booleanParam(name: 'FORCE_DOCKER_REBUILD', defaultValue: false, description: 'Force docker rebuild')
+
+        string(name: 'BUILD_JOB_NAME_LINUX', defaultValue: 'cpp_app_template', description: 'The name of the external job to trigger for linux platform')
+        string(name: 'BUILD_JOB_NAME_WEBASSEMBLY', defaultValue: 'cpp_app_template', description: 'The name of the external job to trigger for webassembly')
+    }
+    stages {
+        stage('Init workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        stage('Build and Collect') {
+            parallel {
+                stage('Linux') {
+                    when { expression { params.BUILD_LINUX } }
+                    steps {
+                        script {
+                            def run = build job: "${params.BUILD_JOB_NAME_LINUX}", parameters: [
+                                string(name: 'DOCKER_TYPE_NAME', value: 'alpine'),
+                                string(name: 'TARGET_PLATFORM', value: 'linux'),
+                                booleanParam(name: 'FORCE_DOCKER_REBUILD', value: params.FORCE_DOCKER_REBUILD)
+                            ]
+                            copyArtifacts (
+                                projectName: "${params.BUILD_JOB_NAME_LINUX}",
+                                selector: specific(run.getNumber().toString()),
+                                target: 'artifacts/'
+                            )
+                        }
+                    }
+                }
+                stage('Webassembly') {
+                    when { expression { params.BUILD_WEBASSEMBLY } }
+                    steps {
+                        script {
+                            def run = build job: "${params.BUILD_JOB_NAME_WEBASSEMBLY}", parameters: [
+                                string(name: 'DOCKER_TYPE_NAME', value: 'emsdk'),
+                                string(name: 'TARGET_PLATFORM', value: 'webassembly'),
+                                booleanParam(name: 'FORCE_DOCKER_REBUILD', value: params.FORCE_DOCKER_REBUILD)
+                            ]
+                            copyArtifacts (
+                                projectName: "${params.BUILD_JOB_NAME_WEBASSEMBLY}",
+                                selector: specific(run.getNumber().toString()),
+                                target: 'artifacts/'
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            archiveArtifacts artifacts: 'artifacts/**', allowEmptyArchive: true, fingerprint: true
+        }
+    }
+}

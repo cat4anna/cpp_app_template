@@ -3,6 +3,7 @@ pipeline {
     parameters {
         choice(name: 'DOCKER_TYPE_NAME', choices: ['alpine', 'emsdk'], description: 'Docker image to use')
         choice(name: 'TARGET_PLATFORM', choices: ['linux', 'webassembly'], description: 'Target platform')
+        booleanParam(name: 'FORCE_DOCKER_REBUILD', defaultValue: false, description: 'Force docker rebuild')
     }
     environment {
         APP_NAME = "cpp_app_template"
@@ -12,6 +13,8 @@ pipeline {
         BUILD_ARGS = "platform=${TARGET_PLATFORM}"
         DOCKER_TAG = "${APP_NAME}:${DOCKER_NAME}"
         DOCKER_FILE = "dockerfile.${DOCKER_NAME}"
+
+        SHOULD_COLLECT_TESTS = "${params.TARGET_PLATFORM != 'webassembly' ? 'true' : 'false'}"
     }
     stages {
         stage('Checkout') {
@@ -22,61 +25,71 @@ pipeline {
         }
         stage('Build docker') {
             steps {
-                sh "/bin/bash ci/docker_build.sh ${DOCKER_TAG} ${DOCKER_FILE}"
+                script {
+                    def forceRebuild = params.FORCE_DOCKER_REBUILD ? "--no-cache" : ""
+                    sh "/bin/bash ci/docker_build.sh ${DOCKER_TAG} ${DOCKER_FILE} ${forceRebuild}"
+                }
             }
         }
         stage('Build and Test') {
             parallel {
                 stage('Debug') {
-                    agent {
-                        docker {
-                            image "${DOCKER_TAG}"
-                            reuseNode true
+                    stages {
+                        stage('Debug Build') {
+                            agent { docker { image "${DOCKER_TAG}"; reuseNode true } }
+                            steps {
+                                sh "/usr/bin/lua5.4 ci/ci_run.lua ${BUILD_ARGS} all-debug"
+                            }
                         }
-                    }
-                    steps {
-                        sh "/usr/bin/lua5.4 ci/ci_run.lua ${BUILD_ARGS} all-debug"
-                        xunit checksName: '', thresholds: [failed(unstableThreshold: '0')], tools: [
-                            GoogleTest(
-                                excludesPattern: '',
-                                pattern: 'build/*debug/Testing/*ut.xml',
-                                stopProcessingIfError: true)]
+                        stage('Debug Collect') {
+                            when { expression { env.SHOULD_COLLECT_TESTS != 'false' } }
+                            steps {
+                                xunit (
+                                    thresholds: [failed(unstableThreshold: '0')],
+                                    tools: [GoogleTest(pattern: 'build/*debug/Testing/*ut.xml', stopProcessingIfError: true)],
+                                )
+                            }
+                        }
                     }
                 }
                 stage('Release') {
-                    agent {
-                        docker {
-                            image "${DOCKER_TAG}"
-                            reuseNode true
+                    stages {
+                        stage('Release Build') {
+                            agent { docker { image "${DOCKER_TAG}"; reuseNode true } }
+                            steps {
+                                sh "/usr/bin/lua5.4 ci/ci_run.lua ${BUILD_ARGS} all-release"
+                            }
                         }
-                    }
-                    steps {
-                        sh "/usr/bin/lua5.4 ci/ci_run.lua ${BUILD_ARGS} all-release"
-                        benchmark(
-                            altInputSchemaLocation: '',
-                            altInputSchema: '''{
-                                "description": "Google Benchmark JSON schema",
-                                "failure": { "value": true },
-                                "type": "object",
-                                "properties": {
-                                    "benchmarks": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "name": { "type": "name" },
-                                                "real_time": { "type": "result" },
-                                                "cpu_time": { "type": "result" },
-                                                "iterations": { "type": "parameter" }
+                        stage('Release Collect') {
+                            when { expression { env.SHOULD_COLLECT_TESTS != 'false' } }
+                            steps {
+                                benchmark(
+                                    altInputSchemaLocation: '',
+                                    altInputSchema: '''{
+                                        "description": "Google Benchmark JSON schema",
+                                        "failure": { "value": true },
+                                        "type": "object",
+                                        "properties": {
+                                            "benchmarks": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "name": { "type": "name" },
+                                                        "real_time": { "type": "result" },
+                                                        "cpu_time": { "type": "result" },
+                                                        "iterations": { "type": "parameter" }
+                                                    }
+                                                }
                                             }
                                         }
-                                    }
-                                }
-                            }''',
-                            inputLocation: 'build/*release/Testing/*benchmark.json',
-                            schemaSelection: 'customSchema',
-                            truncateStrings: false
-                        )
+                                    }''',
+                                    inputLocation: 'build/*release/Testing/*benchmark.json',
+                                    schemaSelection: 'customSchema',
+                                    truncateStrings: false
+                                )
+                            }
+                        }
                     }
                 }
             }
