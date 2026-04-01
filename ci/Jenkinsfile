@@ -1,12 +1,16 @@
 pipeline {
-    agent any
+    agent {
+        label 'Linux && Docker'
+    }
     parameters {
         choice(name: 'DOCKER_TYPE_NAME', choices: ['alpine', 'emsdk'], description: 'Docker image to use')
         choice(name: 'TARGET_PLATFORM', choices: ['linux', 'webassembly'], description: 'Target platform')
+        string(name: 'APP_BUILD_NUMBER', defaultValue: "${env.BUILD_NUMBER}", description: 'Set build number from external source')
         booleanParam(name: 'FORCE_DOCKER_REBUILD', defaultValue: false, description: 'Force docker rebuild')
     }
     environment {
         APP_NAME = "cpp_app_template"
+        APP_BUILD_NUMBER = "${params.APP_BUILD_NUMBER}"
         DOCKER_REUSE_DAYS=30
 
         DOCKER_NAME = "${DOCKER_TYPE_NAME}"

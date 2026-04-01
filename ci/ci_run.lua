@@ -47,7 +47,7 @@ local function cmakeConfigure(config)
     lfs.chdir(config.srcDir)
     local command = {
         "cmake",
-        string.format("-DJENKINS_BUILD_NUMBER=%s", os.getenv("BUILD_NUMBER") or "0"),
+        string.format("-DJENKINS_BUILD_NUMBER=%s", os.getenv("APP_BUILD_NUMBER") or os.getenv("BUILD_NUMBER") or "0"),
         string.format("-DCMAKE_BUILD_TYPE=%s", config.name),
         string.format("-DVCPKG_TARGET_TRIPLET=%s", config.triplet),
         string.format("-DPACKAGE_NAME_SUFFIX=%s", config.packageSuffix),

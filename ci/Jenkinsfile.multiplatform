@@ -1,11 +1,11 @@
 pipeline {
-    agent any
+    agent {
+        label 'Linux && Docker'
+    }
     parameters {
         booleanParam(name: 'BUILD_LINUX', defaultValue: true, description: 'Build linux target')
         booleanParam(name: 'BUILD_WEBASSEMBLY', defaultValue: true, description: 'Build webassembly target')
-
         booleanParam(name: 'FORCE_DOCKER_REBUILD', defaultValue: false, description: 'Force docker rebuild')
-
         string(name: 'BUILD_JOB_NAME_LINUX', defaultValue: 'cpp_app_template', description: 'The name of the external job to trigger for linux platform')
         string(name: 'BUILD_JOB_NAME_WEBASSEMBLY', defaultValue: 'cpp_app_template', description: 'The name of the external job to trigger for webassembly')
     }
@@ -24,6 +24,7 @@ pipeline {
                             def run = build job: "${params.BUILD_JOB_NAME_LINUX}", parameters: [
                                 string(name: 'DOCKER_TYPE_NAME', value: 'alpine'),
                                 string(name: 'TARGET_PLATFORM', value: 'linux'),
+                                string(name: 'APP_BUILD_NUMBER', value: env.BUILD_NUMBER),
                                 booleanParam(name: 'FORCE_DOCKER_REBUILD', value: params.FORCE_DOCKER_REBUILD)
                             ]
                             copyArtifacts (
@@ -41,6 +42,7 @@ pipeline {
                             def run = build job: "${params.BUILD_JOB_NAME_WEBASSEMBLY}", parameters: [
                                 string(name: 'DOCKER_TYPE_NAME', value: 'emsdk'),
                                 string(name: 'TARGET_PLATFORM', value: 'webassembly'),
+                                string(name: 'APP_BUILD_NUMBER', value: env.BUILD_NUMBER),
                                 booleanParam(name: 'FORCE_DOCKER_REBUILD', value: params.FORCE_DOCKER_REBUILD)
                             ]
                             copyArtifacts (
