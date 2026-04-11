@@ -72,6 +72,7 @@ function(define_executable)
         message(STATUS "Adding executable ${target_name}")
     else()
         message(STATUS "Skipping executable ${target_name} - not for current platform")
+        set(TARGET ${target_name} PARENT_SCOPE)
         return()
     endif()
 
