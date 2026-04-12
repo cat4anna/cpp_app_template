@@ -1,4 +1,6 @@
+#if defined(PLATFORM_LINUX) || defined(PLARFORM_WINDOWS)
 boost-program-options
+#endif
 benchmark
 gtest
 pthread

@@ -7,16 +7,17 @@ RUN \
     apk add --no-cache clang clang-extra-tools ninja make cmake  && \
     true
 
-ENV VCPKG_DISABLE_METRICS=1
-ENV VCPKG_FORCE_SYSTEM_BINARIES=1
 ENV WORKSPACE_DIR=/workspace
-ENV VCPKG_DIR="${WORKSPACE_DIR}/vcpkg"
 
-ENV VCPKG_TARGET_TRIPLET=x64-linux
-# ENV VCPKG_TARGET_TRIPLET=x64-linux-dynamic
-ENV VCPKG_CMAKE_TOOLCHAIN_FILE=/workspace/vcpkg/scripts/buildsystems/vcpkg.cmake
+ENV VCPKG_DISABLE_METRICS=1 \
+    VCPKG_FORCE_SYSTEM_BINARIES=1 \
+    VCPKG_DIR="${WORKSPACE_DIR}/vcpkg" \
+    VCPKG_TARGET_TRIPLET=x64-linux \
+    VCPKG_CMAKE_TOOLCHAIN_FILE=/workspace/vcpkg/scripts/buildsystems/vcpkg.cmake
 
-ADD ci/vcpkg_package_list.txt "${WORKSPACE_DIR}/vcpkg_package_list.txt"
+ADD ci/vcpkg_package_list.txt "${WORKSPACE_DIR}/vcpkg_package_list_input.txt"
+RUN cpp -E -P -D PLATFORM_LINUX ${WORKSPACE_DIR}/vcpkg_package_list_input.txt > ${WORKSPACE_DIR}/vcpkg_package_list.txt
+
 RUN git clone --depth=1 https://github.com/microsoft/vcpkg.git "${VCPKG_DIR}"
 WORKDIR "${VCPKG_DIR}"
 RUN \

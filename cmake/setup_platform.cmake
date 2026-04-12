@@ -15,6 +15,8 @@ endif()
 message(STATUS "Target platform: ${APP_TARGET_PLATFORM}")
 
 if(APP_TARGET_PLATFORM MATCHES windows)
+    set(PLATFORM_WINDOWS TRUE)
+
     set(APP_INSTALL_CONFIG
         RUNTIME_DEPENDENCIES
         PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
@@ -25,9 +27,13 @@ if(APP_TARGET_PLATFORM MATCHES windows)
     add_definitions(-DPLATFORM_NAME=\"Windows\")
 
 elseif(APP_TARGET_PLATFORM MATCHES linux)
+    set(PLATFORM_LINUX TRUE)
+
     add_definitions(-DPLATFORM_LINUX=1)
     add_definitions(-DPLATFORM_NAME=\"Linux\")
 elseif(APP_TARGET_PLATFORM MATCHES webassembly)
+    set(PLATFORM_WEBASSEMBLY TRUE)
+
     add_definitions(-DPLATFORM_WEBASSEMBLY=1)
     add_definitions(-DPLATFORM_NAME=\"Webassembly\")
 

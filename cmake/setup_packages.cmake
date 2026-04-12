@@ -15,4 +15,6 @@ if (APP_DO_UNIT_TEST)
     find_package(GTest CONFIG REQUIRED)
 endif()
 
-find_package(Boost CONFIG REQUIRED COMPONENTS program_options)
+if(PLATFORM_LINUX OR PLATFORM_WINDOWS)
+    find_package(Boost CONFIG REQUIRED COMPONENTS program_options)
+endif()
