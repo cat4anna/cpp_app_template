@@ -25,7 +25,7 @@ endif()
 function(define_static_lib)
     set(options UNIT_TEST BENCHMARK)
     set(oneValueArgs NAME)
-    set(multiValueArgs LINKS)
+    set(multiValueArgs PLATFORMS LINKS INCLUDES)
     cmake_parse_arguments(PARSE_ARGV 0 arg
         "${options}" "${oneValueArgs}" "${multiValueArgs}"
     )
@@ -39,6 +39,7 @@ function(define_static_lib)
     target_include_directories(${target_name} PRIVATE src)
     add_dependencies(build_all_libs ${target_name})
     target_link_libraries(${target_name} PUBLIC ${arg_LINKS})
+    target_include_directories(${target_name} PUBLIC ${arg_INCLUDES})
     setup_clang_tidy(${target_name})
 
     set(TARGET ${target_name} PARENT_SCOPE)
@@ -62,7 +63,7 @@ endfunction()
 function(define_executable)
     set(options)
     set(oneValueArgs NAME)
-    set(multiValueArgs PLATFORMS LINKS)
+    set(multiValueArgs PLATFORMS LINKS INCLUDES)
     cmake_parse_arguments(PARSE_ARGV 0 arg
         "${options}" "${oneValueArgs}" "${multiValueArgs}"
     )
@@ -81,6 +82,7 @@ function(define_executable)
     target_include_directories(${target_name} PUBLIC include)
     target_include_directories(${target_name} PRIVATE src)
     target_link_libraries(${target_name} PUBLIC ${arg_LINKS})
+    target_include_directories(${target_name} PUBLIC ${arg_INCLUDES})
 
     add_dependencies(build_all_executables ${target_name})
     setup_clang_tidy(${target_name})
