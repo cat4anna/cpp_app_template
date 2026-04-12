@@ -1,4 +1,4 @@
-#if defined(PLATFORM_LINUX) || defined(PLARFORM_WINDOWS)
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_WINDOWS) || defined(PLATFORM_WEBASSEMBLY)
 boost-program-options
 #endif
 benchmark
