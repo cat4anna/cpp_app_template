@@ -1,8 +1,8 @@
 
 $docker_name = "cpp_app_template"
 
-docker build -t $docker_nam:alpine --progress=plain -f .\ci\dockerfile.alpine .
-docker build -t $docker_nam:emsdk  --progress=plain -f .\ci\dockerfile.emsdk  .
+docker build -t ${docker_name}:alpine --progress=plain -f .\ci\dockerfile.alpine .
+docker build -t ${docker_name}:emsdk  --progress=plain -f .\ci\dockerfile.emsdk  .
 
 function execute-webassembly {
     param (
@@ -10,7 +10,7 @@ function execute-webassembly {
     )
 
     docker run -w /workspace/source --rm `
-        -v./:/workspace/source $docker_nam:emsdk `
+        -v./:/workspace/source ${docker_name}:emsdk `
         /usr/bin/lua5.4 ci/ci_run.lua `
         platform=webassembly `
         build-root=/tmp `
@@ -25,7 +25,7 @@ function execute-alpine {
     )
 
     docker run -w /workspace/source --rm `
-        -v./:/workspace/source $docker_nam:alpine `
+        -v./:/workspace/source ${docker_name}:alpine `
         /usr/bin/lua5.4 ci/ci_run.lua `
         platform=linux `
         $action
