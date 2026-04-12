@@ -70,27 +70,6 @@ function(define_ut_target target_name ut_name)
     add_dependencies(build_all_tests ${target_ut_name})
 endfunction()
 
-function(define_ut_multi_target target_name ut_name)
-    if(NOT APP_DO_UNIT_TEST)
-        return()
-    endif()
-
-    file(GLOB_RECURSE src_ut LIST_DIRECTORIES true ${ut_name}/*_test*)
-    set(src_list "")
-
-    foreach(child ${src_ut})
-        file(RELATIVE_PATH rel_child ${CMAKE_CURRENT_SOURCE_DIR} ${child})
-        if(IS_DIRECTORY ${child})
-            define_ut_target(${target_name} ${rel_child})
-        else()
-            list(APPEND src_list ${rel_child})
-        endif()
-    endforeach()
-    if(src_list)
-        define_ut_target(${target_name} ${ut_name})
-    endif()
-endfunction()
-
 # -------------------------------- BENCHMARKS --------------------------------
 
 function(define_benchmark_target target_name benchmark_name)
@@ -161,25 +140,4 @@ function(define_benchmark_target target_name benchmark_name)
 
     add_dependencies(execute_all_tests run_${target_benchmark_name})
     add_dependencies(build_all_tests ${target_benchmark_name})
-endfunction()
-
-function(define_benchmark_multi_target target_name benchmark_name)
-    if(NOT APP_DO_BENCHMARK)
-        return()
-    endif()
-
-    file(GLOB_RECURSE src_benchmark LIST_DIRECTORIES true ${benchmark_name}/*_benchmark*)
-    set(src_list "")
-
-    foreach(child ${src_benchmark})
-        file(RELATIVE_PATH rel_child ${CMAKE_CURRENT_SOURCE_DIR} ${child})
-        if(IS_DIRECTORY ${child})
-            define_benchmark_target(${target_name} ${rel_child})
-        else()
-            list(APPEND src_list ${rel_child})
-        endif()
-    endforeach()
-    if(src_list)
-        define_benchmark_target(${target_name} ${benchmark_name})
-    endif()
 endfunction()

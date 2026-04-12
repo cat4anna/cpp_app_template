@@ -52,10 +52,10 @@ function(define_static_lib)
     endif()
 
     if (APP_DO_UNIT_TEST AND arg_UNIT_TEST)
-        define_ut_multi_target(${target_name} test)
+        define_ut_target(${target_name} test)
     endif()
     if (APP_DO_BENCHMARK AND arg_BENCHMARK)
-        define_benchmark_multi_target(${target_name} test)
+        define_benchmark_target(${target_name} test)
     endif()
 endfunction()
 
