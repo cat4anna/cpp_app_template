@@ -6,7 +6,7 @@ function(define_ut_target target_name ut_name)
         return()
     endif()
 
-    file(GLOB src_ut ${ut_name}/*_test*)
+    file(GLOB_RECURSE src_ut ${ut_name}/*_test*)
 
     string(REGEX REPLACE "test(.*)" "\\1" short_ut_name ${ut_name})
     string(REPLACE "/" "_" valid_ut_name "${short_ut_name}")
@@ -75,7 +75,7 @@ function(define_ut_multi_target target_name ut_name)
         return()
     endif()
 
-    file(GLOB src_ut LIST_DIRECTORIES true ${ut_name}/*_test*)
+    file(GLOB_RECURSE src_ut LIST_DIRECTORIES true ${ut_name}/*_test*)
     set(src_list "")
 
     foreach(child ${src_ut})
@@ -98,7 +98,7 @@ function(define_benchmark_target target_name benchmark_name)
         return()
     endif()
 
-    file(GLOB src_benchmark ${benchmark_name}/*_benchmark*)
+    file(GLOB_RECURSE src_benchmark ${benchmark_name}/*_benchmark*)
 
     string(REGEX REPLACE "test(.*)" "\\1" short_benchmark_name ${benchmark_name})
     string(REPLACE "/" "_" valid_benchmark_name "${short_benchmark_name}")
@@ -168,7 +168,7 @@ function(define_benchmark_multi_target target_name benchmark_name)
         return()
     endif()
 
-    file(GLOB src_benchmark LIST_DIRECTORIES true ${benchmark_name}/*_benchmark*)
+    file(GLOB_RECURSE src_benchmark LIST_DIRECTORIES true ${benchmark_name}/*_benchmark*)
     set(src_list "")
 
     foreach(child ${src_benchmark})
