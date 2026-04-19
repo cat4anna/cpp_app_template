@@ -35,8 +35,8 @@ add_definitions(-DPROJECT_BUILD_NUMBER=\"${CURRENT_BUILD_NUMBER}\")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Enabling debug features")
-    add_definitions(-DDEBUG)
+    add_definitions(-DBUILD_DEBUG)
 else()
-    add_definitions(-DRELEASE)
+    add_definitions(-DBUILD_RELEASE)
 endif()
 

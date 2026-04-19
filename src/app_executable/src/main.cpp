@@ -18,11 +18,11 @@ void PrintDefs() {
 #endif
         << "PROJECT_VERSION=" << PROJECT_VERSION << "\n"
         << "PROJECT_BUILD_NUMBER=" << PROJECT_BUILD_NUMBER << "\n"
-#ifdef DEBUG
-        << "DEBUG is defined\n"
+#ifdef BUILD_DEBUG
+        << "BUILD_DEBUG is defined\n"
 #endif
-#ifdef RELEASE
-        << "RELEASE is defined\n"
+#ifdef BUILD_RELEASE
+        << "BUILD_RELEASE is defined\n"
 #endif
         ;
 }
